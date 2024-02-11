@@ -134,6 +134,8 @@ void FitManager::SaveFitRes(TFitFunction *f,TH1 *hist)
 		res->ReferenceHistogram.SetBinContent(BinIterator,hist->GetBinContent(i));
 		res->ReferenceHistogram.SetBinError(BinIterator,hist->GetBinError(i));
 	}
+	FitRes.push_back(res);
+	
 }
 TFitFunction* FitManager::BookFunction(string InputStr,bool AddNew)
 {
