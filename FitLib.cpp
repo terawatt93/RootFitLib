@@ -111,12 +111,25 @@ TFitFunction* FitManager::FindFunction(string ID)
 }
 void FitManager::SaveFitRes(TFitFunction *f,TH1 *hist)
 {
-	FitResult *res=new FitResult();
+	FitResult *res=0;
+	for(unsigned int i=0;i<FitRes.size();i++)
+	{
+		if(FitRes[i]->id==f->id)
+		{
+			res=FitRes[i];
+		}
+	}
+	if(!res)
+	{
+		res=new FitResult();
+		res->id=f->id;
+	}
 	res->Fit=f;
-	double XMin=hist->GetXaxis()->GetXmin(), XMax=hist->GetXaxis()->GetXmin();
+	double XMin=hist->GetXaxis()->GetXmin(), XMax=hist->GetXaxis()->GetXmax();
 	//диапазон гистограммы-2 диапазона фита
 	double Range=f->RightBorder-f->LeftBorder;
 	double HistLeft=f->LeftBorder-Range/2, HistRight=f->RightBorder+Range/2;
+	
 	if(HistLeft<XMin)
 	{
 		HistLeft=XMin;
@@ -125,14 +138,20 @@ void FitManager::SaveFitRes(TFitFunction *f,TH1 *hist)
 	{
 		HistRight=XMax;
 	}
+	
 	int NBins=(HistRight-HistLeft)/hist->GetBinWidth(1);
+	//cout<<"HistLeft HistRight "<<HistLeft<<" "<<HistRight<<" "<<NBins<<" "<<hist->GetBinWidth(1)<<"\n";
 	res->ReferenceHistogram=TH1D(TString::Format("%s_hist",f->id.c_str()),TString::Format("%s_hist: FitResult; ",f->id.c_str()),NBins,HistLeft,HistRight);
 	int BinMin=hist->GetXaxis()->FindBin(HistLeft), BinMax=hist->GetXaxis()->FindBin(HistRight);
+	
+	//cout<<"BinMin BinMax "<<BinMin<<" "<<BinMax<<"\n";
+	
 	int BinIterator=1;
 	for(int i=BinMin;i<=BinMax;i++)
 	{
 		res->ReferenceHistogram.SetBinContent(BinIterator,hist->GetBinContent(i));
 		res->ReferenceHistogram.SetBinError(BinIterator,hist->GetBinError(i));
+		BinIterator++;
 	}
 	FitRes.push_back(res);
 	
