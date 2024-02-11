@@ -109,7 +109,7 @@ TFitFunction* FitManager::FindFunction(string ID)
 	}
 	return result;
 }
-void SaveFitRes(TFitFunction *f,TH1 *hist)
+void FitManager::SaveFitRes(TFitFunction *f,TH1 *hist)
 {
 	FitResult *res=new FitResult();
 	res->Fit=f;
@@ -277,7 +277,7 @@ void  TFitFunction::Fit(TH1 *h, bool KeepResults)
 	GetParameters();
 	if(KeepResults)
 	{
-
+		SaveFitRes(this,h);
 	}
 }
 void  TFitFunction::AssignPointers()
