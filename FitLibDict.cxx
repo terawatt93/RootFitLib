@@ -50,7 +50,7 @@ namespace ROOT {
       ::FitManager *ptr = nullptr;
       static ::TVirtualIsAProxy* isa_proxy = new ::TInstrumentedIsAProxy< ::FitManager >(nullptr);
       static ::ROOT::TGenericClassInfo 
-         instance("FitManager", ::FitManager::Class_Version(), "FitLib.hh", 28,
+         instance("FitManager", ::FitManager::Class_Version(), "FitLib.hh", 30,
                   typeid(::FitManager), ::ROOT::Internal::DefineBehavior(ptr, ptr),
                   &::FitManager::Dictionary, isa_proxy, 4,
                   sizeof(::FitManager) );
@@ -77,7 +77,7 @@ namespace ROOT {
       ::TF1Parameter *ptr = nullptr;
       static ::TVirtualIsAProxy* isa_proxy = new ::TInstrumentedIsAProxy< ::TF1Parameter >(nullptr);
       static ::ROOT::TGenericClassInfo 
-         instance("TF1Parameter", ::TF1Parameter::Class_Version(), "FitLib.hh", 63,
+         instance("TF1Parameter", ::TF1Parameter::Class_Version(), "FitLib.hh", 65,
                   typeid(::TF1Parameter), ::ROOT::Internal::DefineBehavior(ptr, ptr),
                   &::TF1Parameter::Dictionary, isa_proxy, 4,
                   sizeof(::TF1Parameter) );
@@ -109,7 +109,7 @@ namespace ROOT {
       ::TFitFunction *ptr = nullptr;
       static ::TVirtualIsAProxy* isa_proxy = new ::TInstrumentedIsAProxy< ::TFitFunction >(nullptr);
       static ::ROOT::TGenericClassInfo 
-         instance("TFitFunction", ::TFitFunction::Class_Version(), "FitLib.hh", 78,
+         instance("TFitFunction", ::TFitFunction::Class_Version(), "FitLib.hh", 80,
                   typeid(::TFitFunction), ::ROOT::Internal::DefineBehavior(ptr, ptr),
                   &::TFitFunction::Dictionary, isa_proxy, 4,
                   sizeof(::TFitFunction) );

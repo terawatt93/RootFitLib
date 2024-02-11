@@ -1,5 +1,5 @@
 #include "FitLib.hh"
-
+#pragma once
 void FitManager::Clear()
 {
 	for(unsigned int i=0;i<Functions.size();i++)
@@ -277,7 +277,7 @@ void  TFitFunction::Fit(TH1 *h, bool KeepResults)
 	GetParameters();
 	if(KeepResults)
 	{
-		SaveFitRes(this,h);
+		FitManager::GetPointer()->SaveFitRes(this,h);
 	}
 }
 void  TFitFunction::AssignPointers()

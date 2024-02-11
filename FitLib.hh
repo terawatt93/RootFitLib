@@ -19,6 +19,8 @@
 #include <thread>  
 #include <TVectorD.h> 
 
+#pragma once
+
 using namespace std;
 
 vector<string> SplitStr(string s, string delimiter);
