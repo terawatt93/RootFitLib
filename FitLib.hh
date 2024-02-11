@@ -22,7 +22,7 @@
 using namespace std;
 
 vector<string> SplitStr(string s, string delimiter);
-class FitFunction;
+class TFitFunction;
 class FitResult;
 
 class FitManager:public TObject
@@ -32,11 +32,11 @@ class FitManager:public TObject
 	static FitManager* GetPointer();
 
 	vector<FitResult*> FitRes;
-	vector<FitFunction*> Functions;
+	vector<TFitFunction*> Functions;
 
-	FitFunction* BookFunction(string InputStr,bool AddNew=false);
-	FitFunction* FindFunction(string ID);
-	void SaveFitRes(FitFunction *f,TH1 *hist);
+	TFitFunction* BookFunction(string InputStr,bool AddNew=false);
+	TFitFunction* FindFunction(string ID);
+	void SaveFitRes(TFitFunction *f,TH1 *hist);
 	void SaveToTXT(string filename);
 	void ReadFromTXT(string filename);
 	void PrintToPDF(string filename);
@@ -54,7 +54,7 @@ class FitResult:public TObject
 {
 	public:
 	string id;
-	FitFunction *Fit;
+	TFitFunction *Fit;
 	TString RefHistogramName;
 	TH1D ReferenceHistogram;
 };
@@ -69,13 +69,13 @@ class TF1Parameter:public TObject
 	bool Limited=false;
 	TString ParName;
 	string AsString();
-	FitFunction *fFunction=0;
+	TFitFunction *fFunction=0;
 
 	ClassDef(TF1Parameter,1);
 };
 
 
-class FitFunction:public TObject
+class TFitFunction:public TObject
 {
 	public:
 	TF1 Function;
@@ -92,5 +92,5 @@ class FitFunction:public TObject
 	TF1 *GetFunction();
 	void Fit(TH1 *h, bool KeepResults=true);
 	void AssignPointers();
-	ClassDef(FitFunction,1);
+	ClassDef(TFitFunction,1);
 };

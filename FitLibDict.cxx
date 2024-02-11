@@ -97,35 +97,35 @@ namespace ROOT {
 } // end of namespace ROOT
 
 namespace ROOT {
-   static void *new_FitFunction(void *p = nullptr);
-   static void *newArray_FitFunction(Long_t size, void *p);
-   static void delete_FitFunction(void *p);
-   static void deleteArray_FitFunction(void *p);
-   static void destruct_FitFunction(void *p);
+   static void *new_TFitFunction(void *p = nullptr);
+   static void *newArray_TFitFunction(Long_t size, void *p);
+   static void delete_TFitFunction(void *p);
+   static void deleteArray_TFitFunction(void *p);
+   static void destruct_TFitFunction(void *p);
 
    // Function generating the singleton type initializer
-   static TGenericClassInfo *GenerateInitInstanceLocal(const ::FitFunction*)
+   static TGenericClassInfo *GenerateInitInstanceLocal(const ::TFitFunction*)
    {
-      ::FitFunction *ptr = nullptr;
-      static ::TVirtualIsAProxy* isa_proxy = new ::TInstrumentedIsAProxy< ::FitFunction >(nullptr);
+      ::TFitFunction *ptr = nullptr;
+      static ::TVirtualIsAProxy* isa_proxy = new ::TInstrumentedIsAProxy< ::TFitFunction >(nullptr);
       static ::ROOT::TGenericClassInfo 
-         instance("FitFunction", ::FitFunction::Class_Version(), "FitLib.hh", 78,
-                  typeid(::FitFunction), ::ROOT::Internal::DefineBehavior(ptr, ptr),
-                  &::FitFunction::Dictionary, isa_proxy, 4,
-                  sizeof(::FitFunction) );
-      instance.SetNew(&new_FitFunction);
-      instance.SetNewArray(&newArray_FitFunction);
-      instance.SetDelete(&delete_FitFunction);
-      instance.SetDeleteArray(&deleteArray_FitFunction);
-      instance.SetDestructor(&destruct_FitFunction);
+         instance("TFitFunction", ::TFitFunction::Class_Version(), "FitLib.hh", 78,
+                  typeid(::TFitFunction), ::ROOT::Internal::DefineBehavior(ptr, ptr),
+                  &::TFitFunction::Dictionary, isa_proxy, 4,
+                  sizeof(::TFitFunction) );
+      instance.SetNew(&new_TFitFunction);
+      instance.SetNewArray(&newArray_TFitFunction);
+      instance.SetDelete(&delete_TFitFunction);
+      instance.SetDeleteArray(&deleteArray_TFitFunction);
+      instance.SetDestructor(&destruct_TFitFunction);
       return &instance;
    }
-   TGenericClassInfo *GenerateInitInstance(const ::FitFunction*)
+   TGenericClassInfo *GenerateInitInstance(const ::TFitFunction*)
    {
-      return GenerateInitInstanceLocal(static_cast<::FitFunction*>(nullptr));
+      return GenerateInitInstanceLocal(static_cast<::TFitFunction*>(nullptr));
    }
    // Static variable to force the class initialization
-   static ::ROOT::TGenericClassInfo *_R__UNIQUE_DICT_(Init) = GenerateInitInstanceLocal(static_cast<const ::FitFunction*>(nullptr)); R__UseDummy(_R__UNIQUE_DICT_(Init));
+   static ::ROOT::TGenericClassInfo *_R__UNIQUE_DICT_(Init) = GenerateInitInstanceLocal(static_cast<const ::TFitFunction*>(nullptr)); R__UseDummy(_R__UNIQUE_DICT_(Init));
 } // end of namespace ROOT
 
 //______________________________________________________________________________
@@ -199,37 +199,37 @@ TClass *TF1Parameter::Class()
 }
 
 //______________________________________________________________________________
-atomic_TClass_ptr FitFunction::fgIsA(nullptr);  // static to hold class pointer
+atomic_TClass_ptr TFitFunction::fgIsA(nullptr);  // static to hold class pointer
 
 //______________________________________________________________________________
-const char *FitFunction::Class_Name()
+const char *TFitFunction::Class_Name()
 {
-   return "FitFunction";
+   return "TFitFunction";
 }
 
 //______________________________________________________________________________
-const char *FitFunction::ImplFileName()
+const char *TFitFunction::ImplFileName()
 {
-   return ::ROOT::GenerateInitInstanceLocal((const ::FitFunction*)nullptr)->GetImplFileName();
+   return ::ROOT::GenerateInitInstanceLocal((const ::TFitFunction*)nullptr)->GetImplFileName();
 }
 
 //______________________________________________________________________________
-int FitFunction::ImplFileLine()
+int TFitFunction::ImplFileLine()
 {
-   return ::ROOT::GenerateInitInstanceLocal((const ::FitFunction*)nullptr)->GetImplFileLine();
+   return ::ROOT::GenerateInitInstanceLocal((const ::TFitFunction*)nullptr)->GetImplFileLine();
 }
 
 //______________________________________________________________________________
-TClass *FitFunction::Dictionary()
+TClass *TFitFunction::Dictionary()
 {
-   fgIsA = ::ROOT::GenerateInitInstanceLocal((const ::FitFunction*)nullptr)->GetClass();
+   fgIsA = ::ROOT::GenerateInitInstanceLocal((const ::TFitFunction*)nullptr)->GetClass();
    return fgIsA;
 }
 
 //______________________________________________________________________________
-TClass *FitFunction::Class()
+TClass *TFitFunction::Class()
 {
-   if (!fgIsA.load()) { R__LOCKGUARD(gInterpreterMutex); fgIsA = ::ROOT::GenerateInitInstanceLocal((const ::FitFunction*)nullptr)->GetClass(); }
+   if (!fgIsA.load()) { R__LOCKGUARD(gInterpreterMutex); fgIsA = ::ROOT::GenerateInitInstanceLocal((const ::TFitFunction*)nullptr)->GetClass(); }
    return fgIsA;
 }
 
@@ -282,37 +282,102 @@ namespace ROOT {
 } // end of namespace ROOT for class ::TF1Parameter
 
 //______________________________________________________________________________
-void FitFunction::Streamer(TBuffer &R__b)
+void TFitFunction::Streamer(TBuffer &R__b)
 {
-   // Stream an object of class FitFunction.
+   // Stream an object of class TFitFunction.
 
    if (R__b.IsReading()) {
-      R__b.ReadClassBuffer(FitFunction::Class(),this);
+      R__b.ReadClassBuffer(TFitFunction::Class(),this);
    } else {
-      R__b.WriteClassBuffer(FitFunction::Class(),this);
+      R__b.WriteClassBuffer(TFitFunction::Class(),this);
    }
 }
 
 namespace ROOT {
    // Wrappers around operator new
-   static void *new_FitFunction(void *p) {
-      return  p ? new(p) ::FitFunction : new ::FitFunction;
+   static void *new_TFitFunction(void *p) {
+      return  p ? new(p) ::TFitFunction : new ::TFitFunction;
    }
-   static void *newArray_FitFunction(Long_t nElements, void *p) {
-      return p ? new(p) ::FitFunction[nElements] : new ::FitFunction[nElements];
+   static void *newArray_TFitFunction(Long_t nElements, void *p) {
+      return p ? new(p) ::TFitFunction[nElements] : new ::TFitFunction[nElements];
    }
    // Wrapper around operator delete
-   static void delete_FitFunction(void *p) {
-      delete (static_cast<::FitFunction*>(p));
+   static void delete_TFitFunction(void *p) {
+      delete (static_cast<::TFitFunction*>(p));
    }
-   static void deleteArray_FitFunction(void *p) {
-      delete [] (static_cast<::FitFunction*>(p));
+   static void deleteArray_TFitFunction(void *p) {
+      delete [] (static_cast<::TFitFunction*>(p));
    }
-   static void destruct_FitFunction(void *p) {
-      typedef ::FitFunction current_t;
+   static void destruct_TFitFunction(void *p) {
+      typedef ::TFitFunction current_t;
       (static_cast<current_t*>(p))->~current_t();
    }
-} // end of namespace ROOT for class ::FitFunction
+} // end of namespace ROOT for class ::TFitFunction
+
+namespace ROOT {
+   static TClass *vectorlETFitFunctionmUgR_Dictionary();
+   static void vectorlETFitFunctionmUgR_TClassManip(TClass*);
+   static void *new_vectorlETFitFunctionmUgR(void *p = nullptr);
+   static void *newArray_vectorlETFitFunctionmUgR(Long_t size, void *p);
+   static void delete_vectorlETFitFunctionmUgR(void *p);
+   static void deleteArray_vectorlETFitFunctionmUgR(void *p);
+   static void destruct_vectorlETFitFunctionmUgR(void *p);
+
+   // Function generating the singleton type initializer
+   static TGenericClassInfo *GenerateInitInstanceLocal(const vector<TFitFunction*>*)
+   {
+      vector<TFitFunction*> *ptr = nullptr;
+      static ::TVirtualIsAProxy* isa_proxy = new ::TIsAProxy(typeid(vector<TFitFunction*>));
+      static ::ROOT::TGenericClassInfo 
+         instance("vector<TFitFunction*>", -2, "vector", 389,
+                  typeid(vector<TFitFunction*>), ::ROOT::Internal::DefineBehavior(ptr, ptr),
+                  &vectorlETFitFunctionmUgR_Dictionary, isa_proxy, 0,
+                  sizeof(vector<TFitFunction*>) );
+      instance.SetNew(&new_vectorlETFitFunctionmUgR);
+      instance.SetNewArray(&newArray_vectorlETFitFunctionmUgR);
+      instance.SetDelete(&delete_vectorlETFitFunctionmUgR);
+      instance.SetDeleteArray(&deleteArray_vectorlETFitFunctionmUgR);
+      instance.SetDestructor(&destruct_vectorlETFitFunctionmUgR);
+      instance.AdoptCollectionProxyInfo(TCollectionProxyInfo::Generate(TCollectionProxyInfo::Pushback< vector<TFitFunction*> >()));
+
+      ::ROOT::AddClassAlternate("vector<TFitFunction*>","std::vector<TFitFunction*, std::allocator<TFitFunction*> >");
+      return &instance;
+   }
+   // Static variable to force the class initialization
+   static ::ROOT::TGenericClassInfo *_R__UNIQUE_DICT_(Init) = GenerateInitInstanceLocal(static_cast<const vector<TFitFunction*>*>(nullptr)); R__UseDummy(_R__UNIQUE_DICT_(Init));
+
+   // Dictionary for non-ClassDef classes
+   static TClass *vectorlETFitFunctionmUgR_Dictionary() {
+      TClass* theClass =::ROOT::GenerateInitInstanceLocal(static_cast<const vector<TFitFunction*>*>(nullptr))->GetClass();
+      vectorlETFitFunctionmUgR_TClassManip(theClass);
+   return theClass;
+   }
+
+   static void vectorlETFitFunctionmUgR_TClassManip(TClass* ){
+   }
+
+} // end of namespace ROOT
+
+namespace ROOT {
+   // Wrappers around operator new
+   static void *new_vectorlETFitFunctionmUgR(void *p) {
+      return  p ? ::new((::ROOT::Internal::TOperatorNewHelper*)p) vector<TFitFunction*> : new vector<TFitFunction*>;
+   }
+   static void *newArray_vectorlETFitFunctionmUgR(Long_t nElements, void *p) {
+      return p ? ::new((::ROOT::Internal::TOperatorNewHelper*)p) vector<TFitFunction*>[nElements] : new vector<TFitFunction*>[nElements];
+   }
+   // Wrapper around operator delete
+   static void delete_vectorlETFitFunctionmUgR(void *p) {
+      delete (static_cast<vector<TFitFunction*>*>(p));
+   }
+   static void deleteArray_vectorlETFitFunctionmUgR(void *p) {
+      delete [] (static_cast<vector<TFitFunction*>*>(p));
+   }
+   static void destruct_vectorlETFitFunctionmUgR(void *p) {
+      typedef vector<TFitFunction*> current_t;
+      (static_cast<current_t*>(p))->~current_t();
+   }
+} // end of namespace ROOT for class vector<TFitFunction*>
 
 namespace ROOT {
    static TClass *vectorlETF1ParametergR_Dictionary();
@@ -444,71 +509,6 @@ namespace ROOT {
    }
 } // end of namespace ROOT for class vector<FitResult*>
 
-namespace ROOT {
-   static TClass *vectorlEFitFunctionmUgR_Dictionary();
-   static void vectorlEFitFunctionmUgR_TClassManip(TClass*);
-   static void *new_vectorlEFitFunctionmUgR(void *p = nullptr);
-   static void *newArray_vectorlEFitFunctionmUgR(Long_t size, void *p);
-   static void delete_vectorlEFitFunctionmUgR(void *p);
-   static void deleteArray_vectorlEFitFunctionmUgR(void *p);
-   static void destruct_vectorlEFitFunctionmUgR(void *p);
-
-   // Function generating the singleton type initializer
-   static TGenericClassInfo *GenerateInitInstanceLocal(const vector<FitFunction*>*)
-   {
-      vector<FitFunction*> *ptr = nullptr;
-      static ::TVirtualIsAProxy* isa_proxy = new ::TIsAProxy(typeid(vector<FitFunction*>));
-      static ::ROOT::TGenericClassInfo 
-         instance("vector<FitFunction*>", -2, "vector", 389,
-                  typeid(vector<FitFunction*>), ::ROOT::Internal::DefineBehavior(ptr, ptr),
-                  &vectorlEFitFunctionmUgR_Dictionary, isa_proxy, 0,
-                  sizeof(vector<FitFunction*>) );
-      instance.SetNew(&new_vectorlEFitFunctionmUgR);
-      instance.SetNewArray(&newArray_vectorlEFitFunctionmUgR);
-      instance.SetDelete(&delete_vectorlEFitFunctionmUgR);
-      instance.SetDeleteArray(&deleteArray_vectorlEFitFunctionmUgR);
-      instance.SetDestructor(&destruct_vectorlEFitFunctionmUgR);
-      instance.AdoptCollectionProxyInfo(TCollectionProxyInfo::Generate(TCollectionProxyInfo::Pushback< vector<FitFunction*> >()));
-
-      ::ROOT::AddClassAlternate("vector<FitFunction*>","std::vector<FitFunction*, std::allocator<FitFunction*> >");
-      return &instance;
-   }
-   // Static variable to force the class initialization
-   static ::ROOT::TGenericClassInfo *_R__UNIQUE_DICT_(Init) = GenerateInitInstanceLocal(static_cast<const vector<FitFunction*>*>(nullptr)); R__UseDummy(_R__UNIQUE_DICT_(Init));
-
-   // Dictionary for non-ClassDef classes
-   static TClass *vectorlEFitFunctionmUgR_Dictionary() {
-      TClass* theClass =::ROOT::GenerateInitInstanceLocal(static_cast<const vector<FitFunction*>*>(nullptr))->GetClass();
-      vectorlEFitFunctionmUgR_TClassManip(theClass);
-   return theClass;
-   }
-
-   static void vectorlEFitFunctionmUgR_TClassManip(TClass* ){
-   }
-
-} // end of namespace ROOT
-
-namespace ROOT {
-   // Wrappers around operator new
-   static void *new_vectorlEFitFunctionmUgR(void *p) {
-      return  p ? ::new((::ROOT::Internal::TOperatorNewHelper*)p) vector<FitFunction*> : new vector<FitFunction*>;
-   }
-   static void *newArray_vectorlEFitFunctionmUgR(Long_t nElements, void *p) {
-      return p ? ::new((::ROOT::Internal::TOperatorNewHelper*)p) vector<FitFunction*>[nElements] : new vector<FitFunction*>[nElements];
-   }
-   // Wrapper around operator delete
-   static void delete_vectorlEFitFunctionmUgR(void *p) {
-      delete (static_cast<vector<FitFunction*>*>(p));
-   }
-   static void deleteArray_vectorlEFitFunctionmUgR(void *p) {
-      delete [] (static_cast<vector<FitFunction*>*>(p));
-   }
-   static void destruct_vectorlEFitFunctionmUgR(void *p) {
-      typedef vector<FitFunction*> current_t;
-      (static_cast<current_t*>(p))->~current_t();
-   }
-} // end of namespace ROOT for class vector<FitFunction*>
-
 namespace {
   void TriggerDictionaryInitialization_FitLibDict_Impl() {
     static const char* headers[] = {
@@ -517,7 +517,7 @@ nullptr
     };
     static const char* includePaths[] = {
 "/home/terawatt/Programs/root/root-install/include/",
-"/home/terawatt/Documents/tests/FitLib/",
+"/home/terawatt/Documents/tests/FitLib/RootFitLib/",
 nullptr
     };
     static const char* fwdDeclCode = R"DICTFWDDCLS(
@@ -528,7 +528,7 @@ nullptr
 extern int __Cling_AutoLoading_Map;
 class __attribute__((annotate("$clingAutoload$FitLib.hh")))  FitManager;
 class __attribute__((annotate("$clingAutoload$FitLib.hh")))  TF1Parameter;
-class __attribute__((annotate("$clingAutoload$FitLib.hh")))  FitFunction;
+class __attribute__((annotate("$clingAutoload$FitLib.hh")))  TFitFunction;
 )DICTFWDDCLS";
     static const char* payloadCode = R"DICTPAYLOAD(
 #line 1 "FitLibDict dictionary payload"
@@ -541,9 +541,9 @@ class __attribute__((annotate("$clingAutoload$FitLib.hh")))  FitFunction;
 #undef  _BACKWARD_BACKWARD_WARNING_H
 )DICTPAYLOAD";
     static const char* classesHeaders[] = {
-"FitFunction", payloadCode, "@",
 "FitManager", payloadCode, "@",
 "TF1Parameter", payloadCode, "@",
+"TFitFunction", payloadCode, "@",
 nullptr
 };
     static bool isInitialized = false;

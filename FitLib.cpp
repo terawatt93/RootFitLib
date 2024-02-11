@@ -51,7 +51,7 @@ void FitManager::ReadFromTXT(string filename)
 	}
 	for(unsigned int i=0;i<id_list.size();i++)
 	{
-		FitFunction *f=new FitFunction();
+		TFitFunction *f=new TFitFunction();
 		f->id=id_list[i];
 		f->ReadFromTXTFile(filename);
 		if(f->parameters.size()>0)
@@ -97,9 +97,9 @@ FitManager* FitManager::GetPointer()
 	return &(Instance());
 }
 
-FitFunction* FitManager::FindFunction(string ID)
+TFitFunction* FitManager::FindFunction(string ID)
 {
-	FitFunction *result=0;
+	TFitFunction *result=0;
 	for(unsigned int i=0;i<Functions.size();i++)
 	{
 		if(Functions[i]->id==ID)
@@ -109,7 +109,7 @@ FitFunction* FitManager::FindFunction(string ID)
 	}
 	return result;
 }
-void SaveFitRes(FitFunction *f,TH1 *hist)
+void SaveFitRes(TFitFunction *f,TH1 *hist)
 {
 	FitResult *res=new FitResult();
 	res->Fit=f;
@@ -135,13 +135,13 @@ void SaveFitRes(FitFunction *f,TH1 *hist)
 		res->ReferenceHistogram.SetBinError(BinIterator,hist->GetBinError(i));
 	}
 }
-FitFunction* FitManager::BookFunction(string InputStr,bool AddNew)
+TFitFunction* FitManager::BookFunction(string InputStr,bool AddNew)
 {
-	FitFunction *f=new FitFunction();
+	TFitFunction *f=new TFitFunction();
 	f->FromString(InputStr);
 	if(AddNew)
 	{
-		FitFunction *ff=FindFunction(f->id);
+		TFitFunction *ff=FindFunction(f->id);
 		string id_str=f->id;
 		int iterator=0;
 		while(ff)
@@ -155,7 +155,7 @@ FitFunction* FitManager::BookFunction(string InputStr,bool AddNew)
 	}
 	else
 	{
-		FitFunction *ff=FindFunction(f->id);
+		TFitFunction *ff=FindFunction(f->id);
 		if(ff)
 		{
 			for(unsigned int i=0;i<Functions.size();i++)
@@ -215,7 +215,7 @@ string TF1Parameter::AsString()
 	return result;
 }
 
-void FitFunction::SetParameters()
+void TFitFunction::SetParameters()
 {
 	for(unsigned int i=0;i<parameters.size();i++)
 	{
@@ -238,7 +238,7 @@ void FitFunction::SetParameters()
 	}
 }
 
-void FitFunction::GetParameters()
+void TFitFunction::GetParameters()
 {
 	for(unsigned int i=0;i<parameters.size();i++)
 	{
@@ -246,7 +246,7 @@ void FitFunction::GetParameters()
 		parameters[i].Error=Function.GetParError(i);
 	}
 }
-string FitFunction::AsString(int PageNo)
+string TFitFunction::AsString(int PageNo)
 {
 
 	string result;
@@ -266,11 +266,11 @@ string FitFunction::AsString(int PageNo)
 	return result;
 }
 
-TF1* FitFunction::GetFunction()
+TF1* TFitFunction::GetFunction()
 {
 	return &Function;
 }
-void  FitFunction::Fit(TH1 *h, bool KeepResults)
+void  TFitFunction::Fit(TH1 *h, bool KeepResults)
 {
 	SetParameters();
 	h->Fit(&Function,"R","",LeftBorder,RightBorder);
@@ -280,7 +280,7 @@ void  FitFunction::Fit(TH1 *h, bool KeepResults)
 
 	}
 }
-void  FitFunction::AssignPointers()
+void  TFitFunction::AssignPointers()
 {
 	for(unsigned int i=0;i<parameters.size();i++)
 	{
@@ -288,7 +288,7 @@ void  FitFunction::AssignPointers()
 	}	
 }
 
-void FitFunction::ReadFromTXTFile(string filename)
+void TFitFunction::ReadFromTXTFile(string filename)
 {
 	ifstream ifs(filename);
 	string line;
@@ -346,7 +346,7 @@ void FitFunction::ReadFromTXTFile(string filename)
 	ifs.close();
 }
 
-void FitFunction::FromString(string input)
+void TFitFunction::FromString(string input)
 {
 	vector<string> strings=SplitStr(input,";");
 	if(strings.size()>0)
