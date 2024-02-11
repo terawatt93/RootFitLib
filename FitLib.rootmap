@@ -1,0 +1,6 @@
+[ FitLib.so ]
+# List of selected classes
+class FitFunction
+class FitManager
+class TF1Parameter
+header FitLib.hh
