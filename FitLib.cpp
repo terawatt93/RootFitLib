@@ -9,7 +9,7 @@ void FitManager::SaveToROOT(string filename)
 		f_out.WriteTObject(&(FitRes[i]->ReferenceHistogram));
 		f_out.WriteTObject(&(FitRes[i]->Fit->Function));
 	}
-	f_out.close();
+	f_out.Close();
 }
 
 void FitManager::Clear()
