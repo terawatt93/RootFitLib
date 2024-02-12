@@ -42,6 +42,7 @@ class FitManager:public TObject
 	void SaveToTXT(string filename);
 	void ReadFromTXT(string filename);
 	void PrintToPDF(string filename);
+	void SaveToROOT(string filename);
 	private:
 	FitManager() { }  // конструктор недоступен
 	~FitManager() { } // и деструктор
