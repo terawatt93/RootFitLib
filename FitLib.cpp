@@ -6,8 +6,8 @@ void FitManager::SaveToROOT(string filename)
 	TFile f_out(filename.c_str(),"recreate");
 	for(unsigned int i=0;i<FitRes.size();i++)
 	{
-		f_out.WriteTObject(&(FitRes[i].ReferenceHistogram));
-		f_out.WriteTObject(&(FitRes[i].Fit->Function));
+		f_out.WriteTObject(&(FitRes[i]->ReferenceHistogram));
+		f_out.WriteTObject(&(FitRes[i]->Fit->Function));
 	}
 	f_out.close();
 }
