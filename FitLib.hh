@@ -74,6 +74,7 @@ class TF1Parameter:public TObject
 	bool Fixed=false;
 	bool Limited=false;
 	TString ParName;
+	bool Chi2TakenIntoAccount=false;
 	string AsString();
 	TFitFunction *fFunction=0;
 
@@ -100,5 +101,6 @@ class TFitFunction:public TObject
 	TF1 *GetFunction();
 	void Fit(TH1 *h, bool KeepResults=true);
 	void AssignPointers();
+	void GenerateTPaveTextWithResults(TPaveText* p);
 	ClassDef(TFitFunction,1);
 };

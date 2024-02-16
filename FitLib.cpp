@@ -91,6 +91,9 @@ void FitManager::PrintToPDF(string filename)
 	{
 		FitRes[i]->ReferenceHistogram.Draw("hist");
 		FitRes[i]->Fit->Function.Draw("same");
+		TPaveText pt(0.7,0.4,1,1);
+		FitRes[i]->Fit->GenerateTPaveTextWithResults(&pt);
+		pt.Draw();
 		c->Print((filename).c_str(),"pdf");
 	}
 	c->Print((filename+"]").c_str(),"pdf");
@@ -281,6 +284,11 @@ void TFitFunction::GetParameters()
 		if(FitManager::GetPointer()->MultiplyToChi2)
 		{
 			parameters[i].Error*=sqrt(Function.GetChisquare()/Function.GetNDF());
+			parameters[i].Chi2TakenIntoAccount=true;
+		}
+		else
+		{
+			parameters[i].Chi2TakenIntoAccount=false;
 		}
 	}
 }
@@ -399,6 +407,25 @@ void TFitFunction::ReadFromTXTFile(string filename)
 		}
 	}
 	ifs.close();
+}
+
+void TFitFunction::GenerateTPaveTextWithResults(TPaveText* p)
+{
+	if(!p)
+	{
+		cout<<"This is TFitFunction::GenerateTPaveTextWithResults(): invalid pointer to TPaveText!\n";
+	}
+	p->AddText(TString::Format("ID: %s",id.c_str()));
+	p->AddText(TString::Format("#chi^2/NDF: %.2f",Function.GetChisquare()/Function.GetNDF()));
+	for(unsigned int i=0;i<parameters.size();i++)
+	{
+		TString addition=TString::Format("p[%d]: %s %.3f#pm%.3f (%.3f...%.3f)");
+		if(parameters[i].Chi2TakenIntoAccount)
+		{
+			addition+=" #chi^2/NDF incl";
+		}
+		p->AddText(TString::Format("p[%d]: %s %.3f#pm%.3f (%.3f...%.3f)"));
+	}
 }
 
 void TFitFunction::FromString(string input)
