@@ -18,6 +18,8 @@
 #include <TGraphErrors.h>
 #include <thread>  
 #include <TVectorD.h> 
+#include <TROOT.h> 
+#include <TStyle.h> 
 
 #pragma once
 
@@ -43,6 +45,7 @@ class FitManager:public TObject
 	void ReadFromTXT(string filename);
 	void PrintToPDF(string filename);
 	void SaveToROOT(string filename);
+	bool MultiplyToChi2=true;
 	private:
 	FitManager() { }  // конструктор недоступен
 	~FitManager() { } // и деструктор
@@ -90,6 +93,8 @@ class TFitFunction:public TObject
 	string AsString(int PageNo=0);
 	void GetParameters();
 	void SetParameters();
+	double GetParameterValue(int number);
+	double GetParError(int number);
 	void FromString(string input);
 	//void FromString(TString input);
 	TF1 *GetFunction();

@@ -76,6 +76,7 @@ void FitManager::PrintToPDF(string filename)
 {
 	TCanvas *c;
 	bool CreatedCanvas=false;
+	gStyle->SetOptFit(11111);
 	if(!gPad)
 	{
 		c=gPad->GetCanvas();
@@ -277,6 +278,10 @@ void TFitFunction::GetParameters()
 	{
 		parameters[i].Value=Function.GetParameter(i);
 		parameters[i].Error=Function.GetParError(i);
+		if(FitManager::GetPointer()->MultiplyToChi2)
+		{
+			parameters[i].Error*=sqrt(Function.GetChisquare()/Function.GetNDF());
+		}
 	}
 }
 string TFitFunction::AsString(int PageNo)
@@ -319,6 +324,23 @@ void  TFitFunction::AssignPointers()
 	{
 		parameters[i].fFunction=this;
 	}	
+}
+
+double TFitFunction::GetParameterValue(int number)
+{
+	if((number<(int)parameters.size())&&(number>=0))
+	{
+		return parameters[number].Value;
+	}
+	return nan("NAN");
+}
+double TFitFunction::GetParError(int number)
+{
+	if((number<(int)parameters.size())&&(number>=0))
+	{
+		return parameters[number].Error;	
+	}
+	return nan("NAN");
 }
 
 void TFitFunction::ReadFromTXTFile(string filename)
