@@ -419,12 +419,12 @@ void TFitFunction::GenerateTPaveTextWithResults(TPaveText* p)
 	p->AddText(TString::Format("#chi^2/NDF: %.2f",Function.GetChisquare()/Function.GetNDF()));
 	for(unsigned int i=0;i<parameters.size();i++)
 	{
-		TString addition=TString::Format("p[%d]: %s %.3f#pm%.3f (%.3f...%.3f)");
+		TString addition=TString::Format("p[%d]: %s %.3f#pm%.3f (%.3f...%.3f)",i,parameters[i].ParName,parameters[i].Value,parameters[i].Error,parameters[i].MinLimit,parameters[i].MaxLimit);
 		if(parameters[i].Chi2TakenIntoAccount)
 		{
 			addition+=" #chi^2/NDF incl";
 		}
-		p->AddText(TString::Format("p[%d]: %s %.3f#pm%.3f (%.3f...%.3f)"));
+		p->AddText(addition);
 	}
 }
 

@@ -109,7 +109,7 @@ namespace ROOT {
       ::TFitFunction *ptr = nullptr;
       static ::TVirtualIsAProxy* isa_proxy = new ::TInstrumentedIsAProxy< ::TFitFunction >(nullptr);
       static ::ROOT::TGenericClassInfo 
-         instance("TFitFunction", ::TFitFunction::Class_Version(), "FitLib.hh", 84,
+         instance("TFitFunction", ::TFitFunction::Class_Version(), "FitLib.hh", 85,
                   typeid(::TFitFunction), ::ROOT::Internal::DefineBehavior(ptr, ptr),
                   &::TFitFunction::Dictionary, isa_proxy, 4,
                   sizeof(::TFitFunction) );
