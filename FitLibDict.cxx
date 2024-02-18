@@ -340,7 +340,7 @@ namespace ROOT {
       instance.SetDestructor(&destruct_vectorlETFitFunctionmUgR);
       instance.AdoptCollectionProxyInfo(TCollectionProxyInfo::Generate(TCollectionProxyInfo::Pushback< vector<TFitFunction*> >()));
 
-      instance.AdoptAlternate(::ROOT::AddClassAlternate("vector<TFitFunction*>","std::vector<TFitFunction*, std::allocator<TFitFunction*> >"));
+      ::ROOT::AddClassAlternate("vector<TFitFunction*>","std::vector<TFitFunction*, std::allocator<TFitFunction*> >");
       return &instance;
    }
    // Static variable to force the class initialization
@@ -361,10 +361,10 @@ namespace ROOT {
 namespace ROOT {
    // Wrappers around operator new
    static void *new_vectorlETFitFunctionmUgR(void *p) {
-      return  p ? ::new(static_cast<::ROOT::Internal::TOperatorNewHelper*>(p)) vector<TFitFunction*> : new vector<TFitFunction*>;
+      return  p ? ::new((::ROOT::Internal::TOperatorNewHelper*)p) vector<TFitFunction*> : new vector<TFitFunction*>;
    }
    static void *newArray_vectorlETFitFunctionmUgR(Long_t nElements, void *p) {
-      return p ? ::new(static_cast<::ROOT::Internal::TOperatorNewHelper*>(p)) vector<TFitFunction*>[nElements] : new vector<TFitFunction*>[nElements];
+      return p ? ::new((::ROOT::Internal::TOperatorNewHelper*)p) vector<TFitFunction*>[nElements] : new vector<TFitFunction*>[nElements];
    }
    // Wrapper around operator delete
    static void delete_vectorlETFitFunctionmUgR(void *p) {
@@ -405,7 +405,7 @@ namespace ROOT {
       instance.SetDestructor(&destruct_vectorlETF1ParametergR);
       instance.AdoptCollectionProxyInfo(TCollectionProxyInfo::Generate(TCollectionProxyInfo::Pushback< vector<TF1Parameter> >()));
 
-      instance.AdoptAlternate(::ROOT::AddClassAlternate("vector<TF1Parameter>","std::vector<TF1Parameter, std::allocator<TF1Parameter> >"));
+      ::ROOT::AddClassAlternate("vector<TF1Parameter>","std::vector<TF1Parameter, std::allocator<TF1Parameter> >");
       return &instance;
    }
    // Static variable to force the class initialization
@@ -426,10 +426,10 @@ namespace ROOT {
 namespace ROOT {
    // Wrappers around operator new
    static void *new_vectorlETF1ParametergR(void *p) {
-      return  p ? ::new(static_cast<::ROOT::Internal::TOperatorNewHelper*>(p)) vector<TF1Parameter> : new vector<TF1Parameter>;
+      return  p ? ::new((::ROOT::Internal::TOperatorNewHelper*)p) vector<TF1Parameter> : new vector<TF1Parameter>;
    }
    static void *newArray_vectorlETF1ParametergR(Long_t nElements, void *p) {
-      return p ? ::new(static_cast<::ROOT::Internal::TOperatorNewHelper*>(p)) vector<TF1Parameter>[nElements] : new vector<TF1Parameter>[nElements];
+      return p ? ::new((::ROOT::Internal::TOperatorNewHelper*)p) vector<TF1Parameter>[nElements] : new vector<TF1Parameter>[nElements];
    }
    // Wrapper around operator delete
    static void delete_vectorlETF1ParametergR(void *p) {
@@ -470,7 +470,7 @@ namespace ROOT {
       instance.SetDestructor(&destruct_vectorlEFitResultmUgR);
       instance.AdoptCollectionProxyInfo(TCollectionProxyInfo::Generate(TCollectionProxyInfo::Pushback< vector<FitResult*> >()));
 
-      instance.AdoptAlternate(::ROOT::AddClassAlternate("vector<FitResult*>","std::vector<FitResult*, std::allocator<FitResult*> >"));
+      ::ROOT::AddClassAlternate("vector<FitResult*>","std::vector<FitResult*, std::allocator<FitResult*> >");
       return &instance;
    }
    // Static variable to force the class initialization
@@ -491,10 +491,10 @@ namespace ROOT {
 namespace ROOT {
    // Wrappers around operator new
    static void *new_vectorlEFitResultmUgR(void *p) {
-      return  p ? ::new(static_cast<::ROOT::Internal::TOperatorNewHelper*>(p)) vector<FitResult*> : new vector<FitResult*>;
+      return  p ? ::new((::ROOT::Internal::TOperatorNewHelper*)p) vector<FitResult*> : new vector<FitResult*>;
    }
    static void *newArray_vectorlEFitResultmUgR(Long_t nElements, void *p) {
-      return p ? ::new(static_cast<::ROOT::Internal::TOperatorNewHelper*>(p)) vector<FitResult*>[nElements] : new vector<FitResult*>[nElements];
+      return p ? ::new((::ROOT::Internal::TOperatorNewHelper*)p) vector<FitResult*>[nElements] : new vector<FitResult*>[nElements];
    }
    // Wrapper around operator delete
    static void delete_vectorlEFitResultmUgR(void *p) {
@@ -517,7 +517,7 @@ nullptr
     };
     static const char* includePaths[] = {
 "/home/terawatt/Programs/root/root-install/include/",
-"/home/terawatt/Programs/rootfitlib/",
+"/home/terawatt/Documents/tests/FitLib/RootFitLib/",
 nullptr
     };
     static const char* fwdDeclCode = R"DICTFWDDCLS(

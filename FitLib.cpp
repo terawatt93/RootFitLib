@@ -485,6 +485,87 @@ void TFitFunction::FromString(string input)
 		sstr>>par.Value>>par.MinLimit>>par.MaxLimit;
 		par.fFunction=this;
 		parameters.push_back(par);
+		if(parameters.size()>par.ParNumber)
+		{
+			parameters[par.ParNumber]=par;
+		}
+		else
+		{
+			parameters.resize(par.ParNumber+1);
+			parameters[par.ParNumber]=par;
+		}
 	}
 	SetParameters();
+}
+
+void TFitFunctionComponent::FromString(string input)
+{
+	vector<string> strings=SplitStr(input,";");
+	if(strings.size()>0)
+	{
+		stringstream sstr(strings[0]);
+		sstr>>id>>func_str>>LeftBorder>>RightBorder;
+		Function=TF1(TString::Format("%s",id.c_str()),func_str.c_str(),LeftBorder,RightBorder);
+	}
+	if(fFunction)
+	{
+		for(unsigned int i=1; i<strings.size();i++)
+		{
+
+			TString ts(strings[i].c_str());
+			TF1Parameter par;
+			if(ts.Index("limited")>=0)
+			{
+				par.Limited=true;
+			}
+			if(ts.Index("fixed")>=0)
+			{
+				par.Fixed=true;
+			}
+			if(ts.Index("Name:")>=0)
+			{
+				int space_iterator=0;
+				TString Name_str;
+				for(int i=ts.Index("Name:");i<ts.Length();i++)
+				{
+					if(ts[i]==' ')
+					{
+						space_iterator++;
+					}
+					if(space_iterator==1)
+					{
+						Name_str+=ts[i];
+					}
+					else if(space_iterator>1)
+					{
+						break;
+					}
+				}
+				ts.ReplaceAll("Name","");
+				ts.ReplaceAll("Name_str","");
+				par.ParName=Name_str;
+			}
+			ts.ReplaceAll("limited","");
+			ts.ReplaceAll("fixed","");
+			stringstream sstr(ts.Data());
+			
+			par.fFunction=this;
+			//int parNum;
+			string limited,fixed;
+			sstr>>par.ParNumber;
+			sstr>>par.Value>>par.MinLimit>>par.MaxLimit;
+			par.fFunction=fFunction;
+			if(fFunction->parameters.size()>par.ParNumber)
+			{
+				fFunction->parameters[par.ParNumber]=par;
+			}
+			else
+			{
+				fFunction->parameters.resize(par.ParNumber+1);
+				fFunction->parameters[par.ParNumber]=par;
+			}
+			
+		}
+		fFunction->SetParameters();
+	}
 }

@@ -81,6 +81,20 @@ class TF1Parameter:public TObject
 	ClassDef(TF1Parameter,1);
 };
 
+class TFitFunctionComponent:public TObject
+{
+	public:
+	TF1 Function;
+	string id;
+	string func_str;
+	double LeftBorder=20,RightBorder=100;
+	TFitFunction* fFunction=0;
+	vector<TF1Parameter*> ComponentParameters;
+	vector<int> ParNumbersMap;
+	int Color=1;
+	void FromString(string input);
+	ClassDef(TFitFunctionComponent,1);
+};
 
 class TFitFunction:public TObject
 {
