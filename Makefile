@@ -21,4 +21,4 @@ $(PROGRAM): $(SRCS)
 	@echo "done"
 #options:
 clean:; @rm -rf core *.so *.rootmap *.cxx *.pcm
-	install:; @echo 'export LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:'`pwd`>>~/.bashrc; echo 'export CPATH=$$CPATH:'`pwd`>>~/.bashrc
+install:; @echo 'export LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:'`pwd`>>~/.bashrc; echo 'export CPATH=$$CPATH:'`pwd`>>~/.bashrc
