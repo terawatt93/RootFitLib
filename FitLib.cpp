@@ -77,7 +77,7 @@ void FitManager::PrintToPDF(string filename)
 	TCanvas *c;
 	bool CreatedCanvas=false;
 	gStyle->SetOptFit(11111);
-	if(!gPad)
+	if(gPad)
 	{
 		c=gPad->GetCanvas();
 	}
@@ -549,7 +549,7 @@ void TFitFunctionComponent::FromString(string input)
 			ts.ReplaceAll("fixed","");
 			stringstream sstr(ts.Data());
 			
-			par.fFunction=this;
+			par.fFunction=this->fFunction;
 			//int parNum;
 			string limited,fixed;
 			sstr>>par.ParNumber;
