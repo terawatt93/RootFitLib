@@ -1,6 +1,6 @@
 CXX = `root-config --cxx`
 CXXFLAGS = `root-config --cflags` -fPIC -g -Wall
-ROOTLIBS = `root-config --glibs` -lMathMore
+ROOTLIBS = `root-config --glibs`
 SHARED = -shared
 SRCS =FitLibDict.cxx FitLib.cpp
 HDRS = FitLibLinkDef.h FitLib.hh
@@ -17,7 +17,7 @@ FitLibDict.cxx: $(HDRS) FitLibLinkDef.h
 $(PROGRAM): $(SRCS)
 	@echo "Building $(PROGRAM) ..."
 	@rm -f $(PROGRAM)
-	@$(CXX) $(CXXFLAGS) $(SHARED) -o $@ $^ $(ROOTLIBS) /usr/lib/x86_64-linux-gnu/libzip.so /usr/lib/x86_64-linux-gnu/libsqlite3.so
+	@$(CXX) $(CXXFLAGS) $(SHARED) -o $@ $^ $(ROOTLIBS) 
 	@echo "done"
 #options:
 clean:; @rm -rf core *.so *.rootmap *.cxx *.pcm
