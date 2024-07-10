@@ -74,33 +74,67 @@ void FitManager::ReadFromTXT(string filename)
 }
 void FitManager::PrintToPDF(string filename)
 {
-	TCanvas *c;
+	TCanvas *c=0;
 	bool CreatedCanvas=false;
+	gStyle->SetOptStat(0);
 	gStyle->SetOptFit(11111);
-	if(gPad)
+	/*if(gPad)
 	{
 		c=gPad->GetCanvas();
 	}
 	else
 	{
-		CreatedCanvas=true;
+		CreatedCanvas=true;*/
 		c=new TCanvas();
-	}
+	//}
 	c->Print((filename+"[").c_str(),"pdf");
+	
 	for(unsigned int i=0;i<FitRes.size();i++)
 	{
+		c->cd();
 		FitRes[i]->ReferenceHistogram.Draw("hist");
 		FitRes[i]->Fit->Function.Draw("same");
-		TPaveText pt(0.7,0.4,1,1);
-		FitRes[i]->Fit->GenerateTPaveTextWithResults(&pt);
-		pt.Draw();
+		//TPaveText *pt=new TPaveText(0.7,0.4,1,1);
+		//pt->AddText("aaaa");
+		TLegend leg(0.7,0.4,1,1);
+		leg.AddEntry(&(FitRes[i]->Fit->Function),"fit","l");
+		FitRes[i]->Fit->GenerateTLegendWithResults(&leg);
+		//pt->Draw();
+		//gPad->BuildLegend();
+		//leg.AddEntry((TObject*)0,"aaa","");
+		leg.Draw();
+		gPad->Modified();
+		gPad->Update();
 		c->Print((filename).c_str(),"pdf");
 	}
 	c->Print((filename+"]").c_str(),"pdf");
-	if(CreatedCanvas)
+	/*if(CreatedCanvas)
 	{
 		delete c;
+	}*/
+}
+
+int FitManager::GetPageNumberInPDF(TFitFunction *function)
+{
+	for(unsigned int i=0;i<Functions.size();i++)
+	{
+		if(Functions[i]==function)
+		{
+			return i+1;
+		}
 	}
+	return -1;
+}
+int FitManager::GetPageNumberInPDF(string ID)
+{
+	for(unsigned int i=0;i<Functions.size();i++)
+	{
+		if(Functions[i]->id==ID)
+		{
+			return i+1;
+		}
+	}
+	return -1;
 }
 
 FitManager& FitManager::Instance()
@@ -120,6 +154,7 @@ TFitFunction* FitManager::FindFunction(string ID)
 	{
 		if(Functions[i]->id==ID)
 		{
+			Functions[i]->fManager=this;
 			return Functions[i];
 		}
 	}
@@ -155,7 +190,7 @@ void FitManager::SaveFitRes(TFitFunction *f,TH1 *hist)
 		HistRight=XMax;
 	}
 	
-	int NBins=(HistRight-HistLeft)/hist->GetBinWidth(1);
+	int NBins=ceil((HistRight-HistLeft)/hist->GetBinWidth(1));
 	//cout<<"HistLeft HistRight "<<HistLeft<<" "<<HistRight<<" "<<NBins<<" "<<hist->GetBinWidth(1)<<"\n";
 	res->ReferenceHistogram=TH1D(TString::Format("%s_hist",f->id.c_str()),TString::Format("%s_hist: FitResult; ",f->id.c_str()),NBins,HistLeft,HistRight);
 	int BinMin=hist->GetXaxis()->FindBin(HistLeft), BinMax=hist->GetXaxis()->FindBin(HistRight);
@@ -169,6 +204,7 @@ void FitManager::SaveFitRes(TFitFunction *f,TH1 *hist)
 		res->ReferenceHistogram.SetBinError(BinIterator,hist->GetBinError(i));
 		BinIterator++;
 	}
+	f->fFitResult=res;
 	FitRes.push_back(res);
 	
 }
@@ -176,6 +212,7 @@ TFitFunction* FitManager::BookFunction(string InputStr,bool AddNew)
 {
 	TFitFunction *f=new TFitFunction();
 	f->FromString(InputStr);
+	f->fManager=this;
 	if(AddNew)
 	{
 		TFitFunction *ff=FindFunction(f->id);
@@ -211,6 +248,62 @@ TFitFunction* FitManager::BookFunction(string InputStr,bool AddNew)
 		}
 	}
 	return f;
+}
+
+TFitFunction* FitManager::BookFunction(TString Name,TString Function,double XMin,double XMax,bool AddNew)
+{
+	string id_str(Name.Data());
+	if(AddNew)
+	{
+		TFitFunction *ff=FindFunction(id_str);
+		int iterator=0;
+		while(ff)
+		{
+			string id_str0=id_str+"_"+to_string(iterator);
+			ff=FindFunction(id_str0);
+			iterator++;
+		}
+		if(iterator>0)
+		id_str=id_str+"_"+to_string(iterator);
+
+		TFitFunction *f=new TFitFunction();
+		f->SetFunction(Name,Function,XMin,XMax);
+		f->id=id_str;
+		Functions.push_back(f);
+		f->fManager=this;
+		return f;
+	}
+	else
+	{
+
+		TFitFunction *ff=FindFunction(id_str);
+		if(ff)
+		{
+			for(unsigned int i=0;i<Functions.size();i++)
+			{
+				if(Functions[i]==ff)
+				{
+					delete ff;
+					TFitFunction *f=new TFitFunction();
+					f->SetFunction(Name,Function,XMin,XMax);
+					f->id=id_str;
+					f->fManager=this;
+					Functions[i]=f;
+				}
+			}
+			
+		}
+		else
+		{
+			TFitFunction *f=new TFitFunction();
+			f->SetFunction(Name,Function,XMin,XMax);
+			f->id=id_str;
+			f->fManager=this;
+			Functions.push_back(f);
+			return f;
+		}
+	}
+	return 0;
 }
 
 vector<string> SplitStr(string s, string delimiter)
@@ -254,6 +347,7 @@ string TF1Parameter::AsString()
 
 void TFitFunction::SetParameters()
 {
+	cout<<"parameters.size(): "<<parameters.size()<<"\n";
 	for(unsigned int i=0;i<parameters.size();i++)
 	{
 		Function.SetParameter(parameters[i].ParNumber,parameters[i].Value);
@@ -269,10 +363,50 @@ void TFitFunction::SetParameters()
 			}
 			else
 			{
-				Function.SetParLimits(parameters[i].ParNumber,-1e7,1e7);
+				Function.ReleaseParameter(parameters[i].ParNumber);
 			}
 		}
 	}
+}
+
+void TFitFunction::SetParameter(int ParNumber,double Value)
+{
+	if(parameters.size()>ParNumber)
+	{
+		parameters[ParNumber].Value=Value;
+	}
+	SetParameters();
+}
+void TFitFunction::FixParameter(int ParNumber,double Value)
+{
+	if(parameters.size()>ParNumber)
+	{
+		parameters[ParNumber].Value=Value;
+		parameters[ParNumber].Fixed=true;
+		parameters[ParNumber].Limited=false;
+	}
+	SetParameters();
+}
+void TFitFunction::SetParLimits(int ParNumber,double ValueMin,double ValueMax)
+{
+	if(parameters.size()>ParNumber)
+	{
+		parameters[ParNumber].MinLimit=ValueMin;
+		parameters[ParNumber].MaxLimit=ValueMax;
+		parameters[ParNumber].Limited=true;
+		parameters[ParNumber].Fixed=false;
+	}
+	SetParameters();
+}
+
+void TFitFunction::ReleaseParameter(int ParNumber)
+{
+	if(parameters.size()>ParNumber)
+	{
+		parameters[ParNumber].Limited=false;
+		parameters[ParNumber].Fixed=false;
+	}
+	SetParameters();
 }
 
 void TFitFunction::GetParameters()
@@ -316,6 +450,10 @@ TF1* TFitFunction::GetFunction()
 {
 	return &Function;
 }
+void TFitFunction::GetRange(double &Xmin,double &Xmax)
+{
+	Xmin=LeftBorder; Xmax=RightBorder;
+}
 void  TFitFunction::Fit(TH1 *h, bool KeepResults)
 {
 	SetParameters();
@@ -334,7 +472,32 @@ void  TFitFunction::AssignPointers()
 	}	
 }
 
-double TFitFunction::GetParameterValue(int number)
+void  TFitFunction::SetParName(int ParNumber,TString Name)
+{
+	if(ParNumber<parameters.size())
+	{
+		parameters[ParNumber].ParName=Name;
+	}
+	else
+	{
+		cout<<"This is TFitFunction::SetParName("<<ParNumber<<","<<Name<<"): ParNumber is invalid. Size of parameters is "<<parameters.size()<<"\n";
+	}
+}
+
+TString TFitFunction::GetParName(int ParNumber)
+{
+	if(ParNumber<parameters.size())
+	{
+		return parameters[ParNumber].ParName;
+	}
+	else
+	{
+		cout<<"This is TFitFunction::GetParName("<<ParNumber<<"): ParNumber is invalid. Size of parameters is "<<parameters.size()<<"\n";
+	}
+	return "";
+}
+
+double TFitFunction::GetParameter(int number)
 {
 	if((number<(int)parameters.size())&&(number>=0))
 	{
@@ -351,6 +514,31 @@ double TFitFunction::GetParError(int number)
 	return nan("NAN");
 }
 
+void TFitFunction::SetLineColor(int Color)
+{
+	Function.SetLineColor(Color);
+}
+void TFitFunction::Draw(Option_t *option)
+{
+	Function.Draw(option);
+}
+
+void TFitFunction::SetFunction(TString Name,TString FunctionStr,double XMin,double XMax)
+{
+	Function=TF1(Name,FunctionStr,XMin,XMax);
+	func_str=string(FunctionStr.Data());
+	LeftBorder=XMin,RightBorder=XMax;
+	parameters.resize(Function.GetNpar());
+	for(unsigned int i=0;i<parameters.size();i++)
+	{
+		parameters[i].fFunction=this;
+		parameters[i].ParNumber=i;
+	}
+}
+int TFitFunction::GetNpar()
+{
+	return Function.GetNpar();
+}
 void TFitFunction::ReadFromTXTFile(string filename)
 {
 	ifstream ifs(filename);
@@ -409,9 +597,9 @@ void TFitFunction::ReadFromTXTFile(string filename)
 	ifs.close();
 }
 
-void TFitFunction::GenerateTPaveTextWithResults(TPaveText* p)
+void TFitFunction::GenerateTLegendWithResults(TLegend* p)
 {
-	if(!p)
+	/*if(!p)
 	{
 		cout<<"This is TFitFunction::GenerateTPaveTextWithResults(): invalid pointer to TPaveText!\n";
 	}
@@ -425,6 +613,29 @@ void TFitFunction::GenerateTPaveTextWithResults(TPaveText* p)
 			addition+=" #chi^2/NDF incl";
 		}
 		p->AddText(addition);
+	}*/
+	if(!p)
+	{
+		cout<<"This is TFitFunction::GenerateTPaveTextWithResults(): invalid pointer to TPaveText!\n";
+	}
+	p->AddEntry((TObject*)0,TString::Format("ID: %s",id.c_str()),"");
+	p->AddEntry((TObject*)0,TString::Format("#chi^2/NDF: %.2f",Function.GetChisquare()/Function.GetNDF()),"");
+	for(unsigned int i=0;i<parameters.size();i++)
+	{
+		TString addition="";
+		if(parameters[i].ParName.Length()>0)
+		{
+			addition=TString::Format("p[%d]: %s %.3f#pm%.3f (%.3f...%.3f)",i,parameters[i].ParName.Data(),parameters[i].Value,parameters[i].Error,parameters[i].MinLimit,parameters[i].MaxLimit);
+		}
+		else
+		{
+			addition=TString::Format("p[%d]: %.3f#pm%.3f (%.3f...%.3f)",i,parameters[i].Value,parameters[i].Error,parameters[i].MinLimit,parameters[i].MaxLimit);
+		}
+		if(parameters[i].Chi2TakenIntoAccount)
+		{
+			addition+=" #chi^2/NDF incl";
+		}
+		p->AddEntry((TObject*)0,addition,"");
 	}
 }
 
@@ -440,7 +651,6 @@ void TFitFunction::FromString(string input)
 	}
 	for(unsigned int i=1; i<strings.size();i++)
 	{
-
 		TString ts(strings[i].c_str());
 		TF1Parameter par;
 		if(ts.Index("limited")>=0)

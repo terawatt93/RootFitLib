@@ -29,6 +29,8 @@ vector<string> SplitStr(string s, string delimiter);
 class TFitFunction;
 class FitResult;
 
+TH1D CopyHistogramToTH1D(TH1 *RefHistogram,double Min, double Max);
+
 class FitManager:public TObject
 {
 	public:
@@ -39,12 +41,15 @@ class FitManager:public TObject
 	vector<TFitFunction*> Functions;
 
 	TFitFunction* BookFunction(string InputStr,bool AddNew=false);
+	TFitFunction* BookFunction(TString Name,TString Function,double XMin,double XMax,bool AddNew=false);
 	TFitFunction* FindFunction(string ID);
 	void SaveFitRes(TFitFunction *f,TH1 *hist);
 	void SaveToTXT(string filename);
 	void ReadFromTXT(string filename);
 	void PrintToPDF(string filename);
 	void SaveToROOT(string filename);
+	int GetPageNumberInPDF(TFitFunction *function);
+	int GetPageNumberInPDF(string ID);
 	bool MultiplyToChi2=true;
 	private:
 	FitManager() { }  // конструктор недоступен
@@ -73,7 +78,7 @@ class TF1Parameter:public TObject
 	int ParNumber=0;
 	bool Fixed=false;
 	bool Limited=false;
-	TString ParName;
+	TString ParName="";
 	bool Chi2TakenIntoAccount=false;
 	string AsString();
 	TFitFunction *fFunction=0;
@@ -108,13 +113,30 @@ class TFitFunction:public TObject
 	string AsString(int PageNo=0);
 	void GetParameters();
 	void SetParameters();
-	double GetParameterValue(int number);
+	void SetParName(int ParNumber,TString Name);
+	TString GetParName(int ParNumber);
+	void SetFunction(TString Name,TString FunctionStr,double XMin,double XMax);
+	double GetParameter(int number);
 	double GetParError(int number);
 	void FromString(string input);
+
+	void SetParameter(int ParNumber,double Value);
+	void SetParLimits(int ParNumber,double ValueMin,double ValueMax);
+	
+	void FixParameter(int ParNumber,double Value);
+	void ReleaseParameter(int ParNumber);
+	void GetRange(double &Xmin,double &Xmax);
+
+	void SetLineColor(int Color);
+	void Draw(Option_t *option = ""	);
+	
 	//void FromString(TString input);
 	TF1 *GetFunction();
 	void Fit(TH1 *h, bool KeepResults=true);
 	void AssignPointers();
-	void GenerateTPaveTextWithResults(TPaveText* p);
+	void GenerateTLegendWithResults(TLegend* p);
+	int GetNpar();
+	FitManager *fManager=0;//!
+	FitResult *fFitResult=0;//!
 	ClassDef(TFitFunction,1);
 };

@@ -21,9 +21,9 @@ void FitCo60()
 	}
 	fit->Fit(&spectrum,true);
 	cout<<"Fit result:\n";
-	cout<<"Area: "<<fit->GetParameterValue(0)<<" err: "<<fit->GetParError(0)<<"\n";
-	cout<<"Pos: "<<fit->GetParameterValue(1)<<" err: "<<fit->GetParError(1)<<"\n";
-	cout<<"Sigma: "<<fit->GetParameterValue(2)<<" err: "<<fit->GetParError(2)<<"\n";
+	cout<<"Area: "<<fit->GetParameter(0)<<" err: "<<fit->GetParError(0)<<"\n";
+	cout<<"Pos: "<<fit->GetParameter(1)<<" err: "<<fit->GetParError(1)<<"\n";
+	cout<<"Sigma: "<<fit->GetParameter(2)<<" err: "<<fit->GetParError(2)<<"\n";
 
 	m->SaveToTXT("fits.txt");//сохранить в текстовый файл
 	m->PrintToPDF("fits.pdf");
