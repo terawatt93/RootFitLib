@@ -78,9 +78,24 @@ public:
    void DoText(const char *text);
    void DoSlider();
    void HandleButtons();
+   
+   void DoCanvas(Int_t event, Int_t x, Int_t y, TObject *selected);
 
    ClassDef(RootFitLib_gui, 0);
 };
+
+void RootFitLib_gui::DoCanvas(Int_t event, Int_t x, Int_t y, TObject *selected)
+{
+	TCanvas *c = (TCanvas *) gTQSender;
+	if(event==11)
+	{
+		double xd=c->AbsPixeltoX(x);
+		double yd=c->AbsPixeltoY(y);
+		cout<<"x:"<<xd<<" y:"<<yd<<" selected:"<<selected->GetName()<<"\n";
+		return;
+	}
+}
+
 
 void RootFitLib_gui::GenerateParFrame(int NPar)
 {
@@ -127,7 +142,7 @@ RootFitLib_gui::RootFitLib_gui() : TGMainFrame(gClient->GetRoot(), 100, 100)
    Resize(GetDefaultSize());
    MapWindow();
 
-   fFitFcn = new TF1("fFitFcn", "TMath::LogNormal(x, [0], [1], [2])", 0, 5);
+   /*fFitFcn = new TF1("fFitFcn", "TMath::LogNormal(x, [0], [1], [2])", 0, 5);
    fFitFcn->SetRange(0.0, 2.5);
    fFitFcn->SetParameters(1.0, 0, 1);
    fFitFcn->SetMinimum(1.0e-3);
@@ -135,7 +150,31 @@ RootFitLib_gui::RootFitLib_gui() : TGMainFrame(gClient->GetRoot(), 100, 100)
    fFitFcn->SetLineColor(kRed);
    fFitFcn->SetLineWidth(1);
    fCanvas->GetCanvas()->cd();
-   fFitFcn->Draw();
+   fFitFcn->Draw();*/
+   
+   fCanvas->GetCanvas()->cd();
+   TMultiGraph *mgr=new TMultiGraph();
+   
+   TGraphErrors *gr1=new TGraphErrors();
+   gr1->SetName("gr1");
+   gr1->SetPoint(0,1,2);
+   gr1->SetPointError(0,1,1);
+   gr1->SetMarkerStyle(20);
+   
+   TGraphErrors *gr2=new TGraphErrors();
+   gr2->SetName("gr2");
+   gr2->SetPoint(0,3,1);
+   gr2->SetPointError(0,2,1);
+   gr2->SetMarkerStyle(21);
+   
+   gr2->SetLineColor(2);
+   gr2->SetMarkerColor(2);
+   
+   mgr->Add(gr1);
+   mgr->Add(gr2);
+   mgr->Draw("ap");
+   
+   fCanvas->GetCanvas()->Connect("ProcessedEvent(Int_t,Int_t,Int_t,TObject*)", "RootFitLib_gui",this,"DoCanvas(Int_t,Int_t,Int_t,TObject*)");
   // fCanvas1->GetCanvas()->cd();
   // fFitFcn->Draw();
    
