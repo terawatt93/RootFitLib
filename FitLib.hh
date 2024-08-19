@@ -21,6 +21,15 @@
 #include <TROOT.h> 
 #include <TStyle.h> 
 
+
+//GUI:
+#include <TGButton.h>
+#include <TRootEmbeddedCanvas.h>
+#include <TGLayout.h>
+#include <TGTextEntry.h>
+#include <TGDoubleSlider.h>
+#include <TGFrame.h>
+
 #pragma once
 
 using namespace std;
@@ -46,6 +55,7 @@ class FitManager:public TObject
 	void SaveFitRes(TFitFunction *f,TH1 *hist);
 	void SaveToTXT(string filename);
 	void ReadFromTXT(string filename);
+	void ReadFromROOT(string filename);
 	void PrintToPDF(string filename);
 	void SaveToROOT(string filename);
 	int GetPageNumberInPDF(TFitFunction *function);
@@ -139,4 +149,19 @@ class TFitFunction:public TObject
 	FitManager *fManager=0;//!
 	FitResult *fFitResult=0;//!
 	ClassDef(TFitFunction,1);
+};
+
+class GUIFit:public TGMainFrame
+{
+	public:
+	TRootEmbeddedCanvas *fCanvas;
+	TGHorizontalFrame *fMainFrame;
+	TGLayoutHints *fMainLayout;
+	//TFitFunction *function;
+	//TH1D *ReferenceHistogram;
+	GUIFit();
+	//virtual ~GUIFit();
+	//void CloseWindow();
+	
+	ClassDef(GUIFit, 1);
 };

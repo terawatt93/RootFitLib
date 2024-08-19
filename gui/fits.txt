@@ -1,0 +1,16 @@
+id_list: Fit_9_HPGe_0_0
+Fit_9_HPGe_0_0 func: [0]*exp(-0.5*((x-[1])/[2])**2)+[3]*exp(-0.5*((x-[4])/[5])**2)+[6]*exp(-0.5*((x-[7])/[8])**2)+[9]*exp(-0.5*((x-[10])/[11])**2)+pol1(12) 957.027304 1031.280114 10
+Fit_9_HPGe_0_0 par: 0 limited  free  57.207636 0.000000 2538.278018 8.454375 Heigth_0
+Fit_9_HPGe_0_0 par: 1 limited  free  974.799736 972.229050 977.282830 0.378213 Position_0
+Fit_9_HPGe_0_0 par: 2 limited  free  2.346534 0.505378 15.161339 0.435597 Sigma_0
+Fit_9_HPGe_0_0 par: 3 limited  free  35.137919 0.000000 2640.339641 16.152790 Heigth_1
+Fit_9_HPGe_0_0 par: 4 limited  free  982.120248 980.467623 985.530365 0.416661 Position_1
+Fit_9_HPGe_0_0 par: 5 limited  free  0.705894 0.506274 15.188225 0.451497 Sigma_1
+Fit_9_HPGe_0_0 par: 6 limited  free  30.610997 0.000000 2489.964873 7.872059 Heigth_2
+Fit_9_HPGe_0_0 par: 7 limited  free  988.326500 987.333000 992.403165 0.893567 Position_2
+Fit_9_HPGe_0_0 par: 8 limited  free  2.770020 0.507016 15.210494 1.022564 Sigma_2
+Fit_9_HPGe_0_0 par: 9 limited  free  67.031063 0.000000 2200.839980 18.933251 Heigth_3
+Fit_9_HPGe_0_0 par: 10 limited  free  1012.622717 1011.089188 1016.184728 0.344766 Position_3
+Fit_9_HPGe_0_0 par: 11 limited  free  0.978141 0.509554 15.286620 0.349849 Sigma_3
+Fit_9_HPGe_0_0 par: 12 not_limited  free  105.514007 0.000000 0.000000 79.013263 
+Fit_9_HPGe_0_0 par: 13 not_limited  free  -0.067846 0.000000 0.000000 0.078953 

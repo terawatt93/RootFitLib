@@ -1,5 +1,8 @@
 #include "FitLib.hh"
+#include <TKey.h>
 #pragma once
+
+using namespace std;
 
 void FitManager::SaveToROOT(string filename)
 {
@@ -40,6 +43,41 @@ void FitManager::SaveToTXT(string filename)
 		ofs<<Functions[i]->AsString(i+1)<<"\n";
 	}
 }
+
+void FitManager::ReadFromROOT(string filename)
+{
+	TFile f(filename.c_str());
+	TIter keyList(f.GetListOfKeys());
+	TKey *key;
+	while ((key = (TKey*)keyList()))
+	{
+		if(string(key->GetClassName())=="TF1")
+		{
+			TFitFunction *ff=new TFitFunction();
+			ff->id=key->GetName();
+			ff->Function=*((TF1*)f.Get(key->GetName()));
+			ff->GetParameters();
+			Functions.push_back(ff);
+			TString HistName=TString::Format("%s_hist",key->GetName());
+			HistName.ReplaceAll("fit_","");
+			TH1D *h=(TH1D*)f.Get(HistName);
+			if(h)
+			{
+				FitResult* FR=new FitResult();
+				FR->id=ff->id;
+				FR->Fit=ff;
+				FR->RefHistogramName=HistName;
+				FR->ReferenceHistogram=*h;
+				ff->fFitResult=FR;
+				ff->fManager=this;
+				FitRes.push_back(FR);
+			}
+			Functions.push_back(ff);
+		}
+	}
+	
+}
+
 void FitManager::ReadFromTXT(string filename)
 {
 	Clear();
@@ -779,3 +817,16 @@ void TFitFunctionComponent::FromString(string input)
 		fFunction->SetParameters();
 	}
 }
+
+
+
+GUIFit::GUIFit():TGMainFrame(gClient->GetRoot(),200, 200)
+{
+	//fMainFrame = new TGHorizontalFrame(this, 5, 5, 5, 5);
+	//AddFrame(fMainFrame, new TGLayoutHints(kLHintsRight | kLHintsExpandX |kLHintsExpandY));
+	fCanvas = new TRootEmbeddedCanvas("Canvas", this, 150,150);
+	MapSubwindows();
+	Resize(GetDefaultSize());
+	MapWindow();
+}
+
