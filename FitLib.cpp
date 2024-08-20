@@ -449,10 +449,22 @@ void TFitFunction::ReleaseParameter(int ParNumber)
 
 void TFitFunction::GetParameters()
 {
+	if(Function.GetNpar()>parameters.size())
+	{
+		parameters.resize(Function.GetNpar());
+	}
 	for(unsigned int i=0;i<parameters.size();i++)
 	{
 		parameters[i].Value=Function.GetParameter(i);
 		parameters[i].Error=Function.GetParError(i);
+		double MinLimit,MaxLimit;
+		Function.GetParLimits(i,MinLimit,MaxLimit);
+		if(MinLimit!=MaxLimit)
+		{
+			parameters[i].MinLimit=MinLimit;
+			parameters[i].MaxLimit=MaxLimit;
+			parameters[i].Limited=true;
+		}
 		if(FitManager::GetPointer()->MultiplyToChi2)
 		{
 			parameters[i].Error*=sqrt(Function.GetChisquare()/Function.GetNDF());

@@ -150,51 +150,75 @@ void RootFitLib_gui::GenerateParFrame(TFitFunction *func)
 	}
 }
 
-//______________________________________________________________________________
-RootFitLib_gui::RootFitLib_gui() : TGMainFrame(gClient->GetRoot(), 100, 100)
+void RootFitLib_gui::CreateForms()
 {
+	fHframe0 = new TGHorizontalFrame(this, 0, 0, 0);
+	fVframe0 = new TGVerticalFrame(fHframe0, 0, 0, 0);
+	fVframe1 = new TGVerticalFrame(fHframe0, 0, 0, 0);
 
-   char buf[32];
-   SetCleanup(kDeepCleanup);
-   // Create an embedded canvas and add to the main frame, centered in x and y
-   // and with 30 pixel margins all around
-   fHframe0 = new TGHorizontalFrame(this, 0, 0, 0);
-   fVframe0 = new TGVerticalFrame(fHframe0, 0, 0, 0);
-   fVframe1 = new TGVerticalFrame(fHframe0, 0, 0, 0);
-   
-   
-   fCanvas = new TRootEmbeddedCanvas("Canvas", fVframe0, 600, 400);
-   fLcan = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 1, 1, 1, 1);//Здесь 10,10,10,10 - размеры полей
-   fVframe0->AddFrame(fCanvas, fLcan);
-   fCanvas->GetCanvas()->SetFillColor(33);
-   fCanvas->GetCanvas()->SetFrameFillColor(41);
-   fCanvas->GetCanvas()->SetBorderMode(0);
-   fCanvas->GetCanvas()->SetGrid();
-   fCanvas->GetCanvas()->SetLogy();
-   
-  
-   
-   fHframe0->AddFrame(fVframe0,fLcan);
-   
-   fFitFcn = new TFitFunction();
-   fFitFcn->id="Fit_9_HPGe_0_0";
-   fFitFcn->ReadFromTXTFile("fits.txt");
-   //GenerateParFrame(fFitFcn);
-   AnalyseFitFunctionAndCreatePanels(fFitFcn);
-   
-   fCanvas->GetCanvas()->cd();
-   fFitFcn->Function.Draw();
-   
-   
-   
-   FitButtons=new FitButtonFrame(fVframe1,this);
-	fVframe1->AddFrame(FitButtons,new TGLayoutHints(kFixedWidth | kFixedHeight, 1, 1, 1, 1));
+
+	fCanvas = new TRootEmbeddedCanvas("Canvas", fVframe0, 600, 400);
+	fLcan = new TGLayoutHints(kLHintsExpandX | kLHintsExpandY, 1, 1, 1, 1);//Здесь 10,10,10,10 - размеры полей
+	fVframe0->AddFrame(fCanvas, fLcan);
+	fCanvas->GetCanvas()->SetFillColor(33);
+	fCanvas->GetCanvas()->SetFrameFillColor(41);
+	fCanvas->GetCanvas()->SetBorderMode(0);
+	fCanvas->GetCanvas()->SetGrid();
+	fCanvas->GetCanvas()->SetLogy();
+
+	fHframe0->AddFrame(fVframe0,fLcan);
+	
+	if(!fFitFcn)
+	{
+		cout<<"This is RootFitLib_gui::CreateForms: pointer to FitFunction is invalid! Returned\n";
+		return; 
+	}
+	AnalyseFitFunctionAndCreatePanels(fFitFcn);
+	fCanvas->GetCanvas()->cd();
+	if(fFitFcn->fFitResult)
+	{
+		fFitFcn->fFitResult->ReferenceHistogram.Draw("e hist");
+		fFitFcn->Function.Draw("same");
+	}
+	else
+	{
+		cout<<"This is RootFitLib_gui::CreateForms: pointer to FitResult is invalid! Drawing will be without histogram\n";
+		fFitFcn->Function.Draw();
+	}
+	
+	
+
+
+
+	FitButtons=new FitButtonFrame(fVframe1,this);
+	fVframe1->AddFrame(FitButtons,new TGLayoutHints(kFixedWidth | kFixedHeight|kLHintsBottom, 1, 1, 1, 1));
 	
 	fHframe0->AddFrame(fVframe1,new TGLayoutHints(kFixedWidth | kFixedHeight, 1, 1, 1, 1));
 	AddFrame(fHframe0,fLcan);
-   MapSubwindows();
-   Resize(GetDefaultSize());
-   MapWindow();
+}
+
+//______________________________________________________________________________
+RootFitLib_gui::RootFitLib_gui(string funcName,FitManager *m) : TGMainFrame(gClient->GetRoot(), 100, 100)
+{
+
+	char buf[32];
+	SetCleanup(kDeepCleanup);
+	// Create an embedded canvas and add to the main frame, centered in x and y
+	// and with 30 pixel margins all around
+	if(m)
+	{
+		fFitManager=m;
+		fFitFcn=fFitManager->FindFunction(funcName);
+		if(!fFitFcn)
+		{
+			cout<<"This is RootFitLib_gui: cannot get FitFunction with name \""<<funcName<<"\" from FitManager! Returned\n";
+			return; 
+		}
+	}
+	CreateForms();
+	MapSubwindows();
+	Resize(GetDefaultSize());
+	MapWindow();
 
    
   // fCanvas1->GetCanvas()->cd();
@@ -283,5 +307,8 @@ void RootFitLib_gui::CloseWindow()
 
 void gui_min2()
 {
-   new RootFitLib_gui();
+	//TFile f("SiO2_fits.root");
+	FitManager *m=FitManager::GetPointer();
+	m->ReadFromROOT("SiO2_fits.root");
+   new RootFitLib_gui("fit_Fit_9_HPGe_0_0",m);
 }

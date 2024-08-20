@@ -54,7 +54,7 @@ public:
 
    TRootEmbeddedCanvas *fCanvas,*fCanvas1;
    TGLayoutHints       *fLcan;
-   TFitFunction                 *fFitFcn;
+   TFitFunction                 *fFitFcn=0;
    TGVerticalFrame   *fVframe0, *fVframe1, *fVframe2;
    TGHorizontalFrame   *fHframe0, *fHframe1, *fHframe2;
    TGLayoutHints       *fBly, *fBfly1, *fBfly2, *fBfly3;
@@ -62,6 +62,7 @@ public:
    TGTextEntry         *fTeh1, *fTeh2, *fTeh3;
    TGTextBuffer        *fTbh1, *fTbh2, *fTbh3;
    TGCheckButton       *fCheck1, *fCheck2;
+   FitManager *fFitManager=0;
    //панели с управлением фитами
    FitButtonFrame *FitButtons;//управляющие кнопки для всех параметров
    vector<FitParFrame*> FitParameters;//панели с параметрами
@@ -69,9 +70,9 @@ public:
    void GenerateParFrame(int NPar);
    void GenerateParFrame(TFitFunction *func);
    void AnalyseFitFunctionAndCreatePanels(TFitFunction *func);
+	void CreateForms();
 
-
-   RootFitLib_gui();
+   RootFitLib_gui(string funcName="",FitManager *m=0);
    virtual ~RootFitLib_gui();
 
    void CloseWindow();
