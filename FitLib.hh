@@ -129,6 +129,8 @@ class TFitFunction:public TObject
 	double GetParameter(int number);
 	double GetParError(int number);
 	void FromString(string input);
+	
+	void FromStringObject(string input);//копия ReadFromTXTFile, но из строки 
 
 	void SetParameter(int ParNumber,double Value);
 	void SetParLimits(int ParNumber,double ValueMin,double ValueMax);

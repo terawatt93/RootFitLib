@@ -12,6 +12,19 @@ void FitManager::SaveToROOT(string filename)
 		f_out.WriteTObject(&(FitRes[i]->ReferenceHistogram));
 		f_out.WriteTObject(&(FitRes[i]->Fit->Function));
 	}
+	stringstream ofs;
+	ofs<<"id_list: ";
+	for(unsigned int i=0;i<Functions.size();i++)
+	{
+		ofs<<Functions[i]->id<<" ";
+	}
+	ofs<<"\n";
+	for(unsigned int i=0;i<Functions.size();i++)
+	{
+		ofs<<Functions[i]->AsString(i+1)<<"\n";
+	}
+	string result=ofs.str();
+	f_out.WriteObject(&result,"FitFunctionsList");
 	f_out.Close();
 }
 
@@ -47,18 +60,60 @@ void FitManager::SaveToTXT(string filename)
 void FitManager::ReadFromROOT(string filename)
 {
 	TFile f(filename.c_str());
+	
+	if(f.Get("FitFunctionsList"))
+	{
+		string FitList=*(f.Get<string>("FitFunctionsList"));
+		Clear();
+		stringstream ifs(FitList);
+		string line;
+		vector<string> id_list;
+		while(getline(ifs,line))
+		{
+			int pos=line.find("id_list:");
+			if(pos>=0)
+			{
+				stringstream sstr(line.substr(pos+8,line.size()));
+				while(sstr)
+				{
+					string id_str;
+					sstr>>id_str;
+					id_list.push_back(id_str);
+				}
+
+			}
+		}
+		for(unsigned int i=0;i<id_list.size();i++)
+		{
+			TFitFunction *f=new TFitFunction();
+			f->id=id_list[i];
+			f->FromStringObject(FitList);
+			if(f->parameters.size()>0)
+			{
+				Functions.push_back(f);
+			}
+		}
+	}
+	
 	TIter keyList(f.GetListOfKeys());
 	TKey *key;
 	while ((key = (TKey*)keyList()))
 	{
 		if(string(key->GetClassName())=="TF1")
 		{
-			TFitFunction *ff=new TFitFunction();
-			ff->id=key->GetName();
-			ff->Function=*((TF1*)f.Get(key->GetName()));
-			ff->GetParameters();
-			Functions.push_back(ff);
-			TString HistName=TString::Format("%s_hist",key->GetName());
+			TString id(key->GetName());
+			id.ReplaceAll("fit_","");
+			TFitFunction *ff=FindFunction(id.Data());
+			if(!ff)
+			{
+				ff=new TFitFunction();
+				ff->id=id.Data();
+				ff->Function=*((TF1*)f.Get(key->GetName()));
+				ff->GetParameters();
+				Functions.push_back(ff);
+			}
+			
+			TString HistName=TString::Format("%s_hist",id.Data());
 			HistName.ReplaceAll("fit_","");
 			TH1D *h=(TH1D*)f.Get(HistName);
 			if(h)
@@ -72,7 +127,6 @@ void FitManager::ReadFromROOT(string filename)
 				ff->fManager=this;
 				FitRes.push_back(FR);
 			}
-			Functions.push_back(ff);
 		}
 	}
 	
@@ -383,12 +437,70 @@ string TF1Parameter::AsString()
 	return result;
 }
 
+void TFitFunction::FromStringObject(string input)
+{
+	stringstream ifs(input);
+	string line;
+	while(getline(ifs,line))
+	{
+		stringstream sstr(line);
+		string _id;
+		sstr>>_id;
+		if((id==_id)&&((line.find("func")!=string::npos)||(line.find("par")!=string::npos)))
+		{
+			while(sstr)
+			{
+				string key;
+				sstr>>key;
+				if(key=="func:")
+				{
+					sstr>>func_str>>LeftBorder>>RightBorder;
+					Function=TF1(TString::Format("fit_%s",id.c_str()),func_str.c_str(),LeftBorder,RightBorder);
+				}
+				if(key=="par:")
+				{
+					TF1Parameter par;
+					par.fFunction=this;
+					int parNum;
+					string limited,fixed;
+					sstr>>parNum>>limited>>fixed;
+					par.ParNumber=parNum;
+					if(limited=="limited")
+					{
+						par.Limited=true;
+					}
+					else
+					{
+						par.Limited=false;
+					}
+					if(fixed=="fixed")
+					{
+						par.Fixed=true;
+					}
+					else
+					{
+						par.Fixed=false;
+					}
+					sstr>>par.Value>>par.MinLimit>>par.MaxLimit>>par.Error>>par.ParName;
+					if(parNum>=(int)parameters.size())
+					{
+						parameters.resize(parNum+1);
+					}
+					parameters[parNum]=par;
+				}
+			}
+			SetParameters();
+		}
+	}
+}
+
 void TFitFunction::SetParameters()
 {
 	cout<<"parameters.size(): "<<parameters.size()<<"\n";
 	for(unsigned int i=0;i<parameters.size();i++)
 	{
 		Function.SetParameter(parameters[i].ParNumber,parameters[i].Value);
+		Function.SetParName(i,parameters[i].ParName);
 		if(parameters[i].Fixed)
 		{
 			Function.FixParameter(parameters[i].ParNumber,parameters[i].Value);
