@@ -147,6 +147,50 @@ void FitParFrame::ClkParSet()
 void FitParFrame::ProcessCanvasFunction(int event,int x,int y, TObject *selected,TCanvas *c)
 {
 	cout<<ParName->GetString()<<" "<<event<<" "<<c->AbsPixeltoX(x)<<" "<<c->AbsPixeltoY(y)<<"\n";
+	TH1D *h=0;
+	if(!Main)
+	{
+		cout<<"This is FitParFrame::ProcessCanvasFunction(): pointer to MainFrame is invalid!\n";
+		return;
+	}
+	if(!Main->FitFcn)
+	{
+		cout<<"This is FitParFrame::ProcessCanvasFunction(): pointer to FitFcn is invalid!\n";
+		return;
+	}
+	if(Main->FitFcn->fFitResult)
+	{
+		h=&(Main->FitFcn->fFitResult->ReferenceHistogram);
+	}
+	
+	double Min=0,Max=0;
+	
+	if(h)
+	{
+		double left,right;
+		Main->fFitFcn->Function.GetRange(left,right);
+		h->GetXaxis()->SetRangeUser(left,right);
+		Min=h->GetMinimum();
+		Max=h->GetMaximum();
+	}
+	else
+	{
+		double x1,x2;
+		c->GetRangeAxis(x1,Min,x2,Max);
+	}
+	
+	if(FitStage==0)
+	{
+		if(LeftBorder)
+		{
+			delete LeftBorder;
+		}
+		LeftBorder=new TLine();
+		LeftBorder->SetLineColor(2);
+		LeftBorder=LeftBorder->DrawLine(c->AbsPixeltoX(x),Min, c->AbsPixeltoX(x),Max);
+		//if(Event)
+	}
+	
 	return ;
 }
 

@@ -50,6 +50,10 @@ class FitParFrame : public TGHorizontalFrame
 	void ToTFitFunction(TFitFunction *func,int ParNum);
 	void ClkParSet();
 	void ProcessCanvasFunction(int event,int x,int y, TObject *selected,TCanvas *c);
+	
+	TLine *LeftBorder=0, *RightBorder=0, *Centroid=0;
+	int FitStage=0;
+	
 	ClassDef(FitParFrame,1);
 };
 
