@@ -59,7 +59,16 @@ void FitButtonFrame::FUpdate()
 	func->SetParameters();
 	
 	fMainFrame->fCanvas->GetCanvas()->cd();
-	func->Function.Draw();
+	if(func->fFitResult)
+	{
+		func->fFitResult->ReferenceHistogram.Draw("e hist");
+		func->Function.Draw("same");
+	}
+	else
+	{
+		cout<<"This is RootFitLib_gui::CreateForms: pointer to FitResult is invalid! Drawing will be without histogram\n";
+		func->Function.Draw();
+	}
 	gPad->Update();
 	cout<<"Update\n";
 	for(unsigned int i=0;i<func->parameters.size();i++)
@@ -90,6 +99,7 @@ void FitParFrame :: FromTFitFunction(TFitFunction *func,int ParNum)
 	else
 	{
 		ParName->SetText(TString::Format("%-10s\t",TString::Format("Par %d",ParNum).Data()));
+		func->parameters[ParNum].ParName=TString::Format("Par %d",ParNum);
 	}
 	
 }
@@ -113,7 +123,7 @@ FitParFrame::FitParFrame(TGFrame *fFrame,TString ParName_) : TGHorizontalFrame(f
 	MaxLimit=new TGNumberEntry(this,0,9); 
 	Fixed=new TGCheckButton(this," Fixed");
 	Limited=new TGCheckButton(this,"Limited");
-	ParName=new TGLabel(this, TString::Format("%-10s\t",ParName_.Data()));
+	ParName=new TGTextButton(this, TString::Format("%-10s\t",ParName_.Data()));
 	
 	AddFrame(ParName,new TGLayoutHints(kLHintsLeft|kLHintsCenterY, 0));
 	AddFrame(ParValue, new TGLayoutHints(kLHintsCenterY | kLHintsLeft, 1, 5, 1, 5));
@@ -122,18 +132,86 @@ FitParFrame::FitParFrame(TGFrame *fFrame,TString ParName_) : TGHorizontalFrame(f
 	AddFrame(MaxLimit, new TGLayoutHints(kLHintsCenterY | kLHintsLeft, 1, 5, 1, 5));
 	AddFrame(Fixed, new TGLayoutHints(kLHintsCenterY | kLHintsLeft, 1, 5, 1, 5));
 	AddFrame(Limited, new TGLayoutHints(kLHintsCenterY | kLHintsLeft, 1, 5, 1, 5));
-
+	ParName->Connect("Clicked()","FitParFrame", this, "ClkParSet()");
+	//MinLimit->Connect("Clicked()","FitParFrame", this, "ClkLimit()");
+	//MaxLimit->Connect("Clicked()","FitParFrame", this, "ClkLimit()");
 	Limited->SetState(Pressed(true));
+}
+void FitParFrame::ClkParSet()
+{
+	//cout<<"double clicked val\n";
+	Main->ActiveWidget=this;
+	//cout<<Main->fFitFcn->id;
+	//cout<<" val\n";
+}
+void FitParFrame::ProcessCanvasFunction(int event,int x,int y, TObject *selected,TCanvas *c)
+{
+	cout<<ParName->GetString()<<" "<<event<<" "<<c->AbsPixeltoX(x)<<" "<<c->AbsPixeltoY(y)<<"\n";
+	return ;
 }
 
 
+FunctionStringFrame::FunctionStringFrame(TGFrame *fFrame,RootFitLib_gui *Main_) : TGHorizontalFrame(fFrame, 0, 0, 0)
+{
+	FuncName=new TGLabel(this);
+	FuncField=new TGTextEntry(this);
+	
+	FuncField->SetDefaultSize(250,20);
+	
+	LeftLimit=new TGNumberEntry(this,0,9);
+	RightLimit=new TGNumberEntry(this,0,9);
+	Update=new TGTextButton(this,"Update");
+	AddFrame(FuncName,new TGLayoutHints(kLHintsLeft|kLHintsCenterY, 0));
+	AddFrame(FuncField,new TGLayoutHints(kLHintsLeft|kLHintsCenterY, 0));
+	AddFrame(LeftLimit,new TGLayoutHints(kLHintsLeft|kLHintsCenterY, 0));
+	AddFrame(RightLimit,new TGLayoutHints(kLHintsLeft|kLHintsCenterY, 0));
+	AddFrame(Update,new TGLayoutHints(kLHintsLeft|kLHintsCenterY, 0));
+	Main=Main_;
+	Update->Connect("Clicked()","FunctionStringFrame", this, "UpdateFitFunction()");
+}
+void FunctionStringFrame::UpdateValuesFromFitFunction(TFitFunction *func)
+{
+	FuncName->SetText(func->id.c_str());
+	FuncField->SetText(func->func_str.c_str());
+	LeftLimit->SetNumber(func->LeftBorder);
+	RightLimit->SetNumber(func->RightBorder);
+}
+void FunctionStringFrame::UpdateFitFunction()
+{
+	TString func_str(FuncField->GetText());
+	if(Main->fFitFcn)
+	{
+		Main->fFitFcn->SetFunction(TString((Main->fFitFcn->id).c_str()),func_str,LeftLimit->GetNumber(),RightLimit->GetNumber());
+	}
+	/*Main->fVframe1->RemoveAll();
+	Main->AnalyseFitFunctionAndCreatePanels(Main->fFitFcn);*/
+	Main->fCanvas->GetCanvas()->cd();
+	Main->fFitFcn->SetParameters();
+	if(Main->fFitFcn->fFitResult)
+	{
+		Main->fFitFcn->fFitResult->ReferenceHistogram.Draw("e hist");
+		Main->fFitFcn->Function.Draw("same");
+	}
+	else
+	{
+		cout<<"This is RootFitLib_gui::CreateForms: pointer to FitResult is invalid! Drawing will be without histogram\n";
+		Main->fFitFcn->Function.Draw();
+	}
+	gPad->Update();
+	//Main->FitButtons=new FitButtonFrame(Main->fVframe1,Main);
+	//Main->fVframe1->AddFrame(Main->FitButtons,new TGLayoutHints(kFixedWidth | kFixedHeight|kLHintsBottom, 1, 1, 1, 1));
+	
+}
+
 void RootFitLib_gui::GenerateParFrame(int NPar)
 {
-	TGLayoutHints *Lay=new TGLayoutHints(kFixedWidth | kLHintsExpandY, 1, 1, 1, 1);
+	TGLayoutHints *Lay=new TGLayoutHints(kFixedWidth | kFixedHeight, 1, 1, 1, 1);
 	for(int i=0;i<NPar;i++)
 	{
 		FitParFrame *fP=new FitParFrame(fVframe1,TString::Format("Parameter %d",i));
+		//fP->SetMinHeight(30);
 		FitParameters.push_back(fP);
+		fP->Main=this;
 		fVframe1->AddFrame(fP, Lay);
 	}
 }
@@ -173,6 +251,11 @@ void RootFitLib_gui::CreateForms()
 		cout<<"This is RootFitLib_gui::CreateForms: pointer to FitFunction is invalid! Returned\n";
 		return; 
 	}
+	FSFrame=new FunctionStringFrame(fVframe1,this);
+	FSFrame->UpdateValuesFromFitFunction(fFitFcn);
+	
+	fVframe1->AddFrame(FSFrame,new TGLayoutHints(kFixedWidth | kFixedHeight|kLHintsTop, 1, 1, 1, 1));
+	
 	AnalyseFitFunctionAndCreatePanels(fFitFcn);
 	fCanvas->GetCanvas()->cd();
 	if(fFitFcn->fFitResult)
@@ -185,16 +268,24 @@ void RootFitLib_gui::CreateForms()
 		cout<<"This is RootFitLib_gui::CreateForms: pointer to FitResult is invalid! Drawing will be without histogram\n";
 		fFitFcn->Function.Draw();
 	}
-	
-	
-
-
-
 	FitButtons=new FitButtonFrame(fVframe1,this);
 	fVframe1->AddFrame(FitButtons,new TGLayoutHints(kFixedWidth | kFixedHeight|kLHintsBottom, 1, 1, 1, 1));
 	
+	
+	
 	fHframe0->AddFrame(fVframe1,new TGLayoutHints(kFixedWidth | kFixedHeight, 1, 1, 1, 1));
 	AddFrame(fHframe0,fLcan);
+}
+
+void TestCanv(Int_t event, Int_t x, Int_t y, TObject *selected, TCanvas *c)
+{
+	if(event==11)
+	{
+		double xd=c->AbsPixeltoX(x);
+		double yd=c->AbsPixeltoY(y);
+		cout<<"x:"<<xd<<" y:"<<yd<<" selected:"<<selected->GetName()<<"\n";
+		return;
+	}
 }
 
 //______________________________________________________________________________
@@ -219,12 +310,31 @@ RootFitLib_gui::RootFitLib_gui(string funcName,FitManager *m) : TGMainFrame(gCli
 	MapSubwindows();
 	Resize(GetDefaultSize());
 	MapWindow();
-
-   
+	fCanvas->GetCanvas()->Connect("ProcessedEvent(Int_t,Int_t,Int_t,TObject*)", "RootFitLib_gui",this,"DoCanvas(Int_t,Int_t,Int_t,TObject*)");
+   ProcessCanvasFunction=TestCanv;
   // fCanvas1->GetCanvas()->cd();
   // fFitFcn->Draw();
-   
+}
 
+void RootFitLib_gui::DoCanvas(Int_t event, Int_t x, Int_t y, TObject *selected)
+{
+	TCanvas *c = (TCanvas *) gTQSender;
+	if(ActiveWidget)
+	{
+		//cout<<ActiveWidget->InheritsFrom("FitParFrame")<<"\n";
+		if(ActiveWidget->InheritsFrom("FitParFrame"))
+		{
+			((FitParFrame*)ActiveWidget)->ProcessCanvasFunction(event,x,y,selected,c);
+		}
+	}
+	
+	/*if(event==11)
+	{
+		double xd=c->AbsPixeltoX(x);
+		double yd=c->AbsPixeltoY(y);
+		cout<<"x:"<<xd<<" y:"<<yd<<" selected:"<<selected->GetName()<<"\n";
+		return;
+	}*/
 }
 
 void RootFitLib_gui::AnalyseFitFunctionAndCreatePanels(TFitFunction *func)
@@ -262,7 +372,7 @@ void RootFitLib_gui::AnalyseFitFunctionAndCreatePanels(TFitFunction *func)
 		}
 	}
 	
-	TGLayoutHints *Lay=new TGLayoutHints(kFixedWidth | kLHintsExpandY, 1, 5, 1, 5);
+	TGLayoutHints *Lay=new TGLayoutHints(kFixedWidth | kFixedHeight, 1, 5, 1, 5);
 	for(unsigned int i=0;i<ParametersGroups.size();i++)
 	{
 		TGGroupFrame* gr=new TGGroupFrame(fVframe1,TString::Format("Component %d",i));
@@ -270,20 +380,24 @@ void RootFitLib_gui::AnalyseFitFunctionAndCreatePanels(TFitFunction *func)
 		{
 			FitParFrame *fP=new FitParFrame(gr,TString::Format("par %d",ParametersGroups[i][j]));
 			fP->FromTFitFunction(func,ParametersGroups[i][j]);
+			fP->PointerToParameter=&(func->parameters[ParametersGroups[i][j]]);
+			fP->Main=this;
 			FitParameters.push_back(fP);
 			gr->AddFrame(fP, Lay);
 		}
 		GroupedParameters.push_back(gr);
 		gr->SetTextColor(UColor(i));
-		fVframe1->AddFrame(gr, new TGLayoutHints(kFixedWidth | kFixedHeight, 1, 1, 1, 1));
+		fVframe1->AddFrame(gr, new TGLayoutHints(kFixedWidth | kLHintsExpandY, 1, 1, 1, 1));
 	}
 	TGGroupFrame* gr=new TGGroupFrame(fVframe1,"");
 	for(unsigned int i=0;i<Non_grouped.size();i++)
 	{
 		FitParFrame *fP=new FitParFrame(gr,TString::Format("par %d",Non_grouped[i]));
 		fP->FromTFitFunction(func,Non_grouped[i]);
+		fP->Main=this;
 		FitParameters.push_back(fP);
 		gr->AddFrame(fP, Lay);
+		fP->Resize(200,30);
 	}
 	fVframe1->AddFrame(gr, new TGLayoutHints(kFixedWidth | kFixedHeight, 1, 1, 1, 1));
 }
@@ -309,6 +423,6 @@ void gui_min2()
 {
 	//TFile f("SiO2_fits.root");
 	FitManager *m=FitManager::GetPointer();
-	m->ReadFromROOT("SiO2_fits.root");
-   new RootFitLib_gui("fit_Fit_9_HPGe_0_0",m);
+	m->ReadFromROOT("../tutorial/fits.root");
+   new RootFitLib_gui("FitFunction",m);
 }

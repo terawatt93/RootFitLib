@@ -109,6 +109,8 @@ void FitManager::ReadFromROOT(string filename)
 				ff=new TFitFunction();
 				ff->id=id.Data();
 				ff->Function=*((TF1*)f.Get(key->GetName()));
+				ff->Function.GetRange(ff->LeftBorder,ff->RightBorder);
+				ff->func_str=ff->Function.GetTitle();
 				ff->GetParameters();
 				Functions.push_back(ff);
 			}
@@ -500,7 +502,7 @@ void TFitFunction::SetParameters()
 	for(unsigned int i=0;i<parameters.size();i++)
 	{
 		Function.SetParameter(parameters[i].ParNumber,parameters[i].Value);
-		Function.SetParName(i,parameters[i].ParName);
+		//Function.SetParName(i,parameters[i].ParName);
 		if(parameters[i].Fixed)
 		{
 			Function.FixParameter(parameters[i].ParNumber,parameters[i].Value);

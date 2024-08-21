@@ -33,6 +33,7 @@ class FitButtonFrame : public TGHorizontalFrame //полоса с кнопкам
 	TFitFunction* func;
 	FitButtonFrame(TGFrame *fFrame,RootFitLib_gui *Main);
 	void FUpdate();
+	ClassDef(FitButtonFrame,1);
 };
 
 class FitParFrame : public TGHorizontalFrame
@@ -40,11 +41,30 @@ class FitParFrame : public TGHorizontalFrame
 	public:
 	TGNumberEntry *ParValue,*ParError,*MinLimit,*MaxLimit;
 	TGCheckButton *Fixed,*Limited;
-	TGLabel *ParName;
+	TGTextButton *ParName;
 	TGGroupFrame* fGroup;//указатель на группу
+	TF1Parameter* PointerToParameter=0;
+	RootFitLib_gui *Main=0;
 	FitParFrame(TGFrame *fFrame,TString ParName_="");
 	void FromTFitFunction(TFitFunction *func,int ParNum);
 	void ToTFitFunction(TFitFunction *func,int ParNum);
+	void ClkParSet();
+	void ProcessCanvasFunction(int event,int x,int y, TObject *selected,TCanvas *c);
+	ClassDef(FitParFrame,1);
+};
+
+class FunctionStringFrame : public TGHorizontalFrame
+{
+	public:
+	TGLabel *FuncName;
+	TGTextEntry *FuncField;
+	TGNumberEntry *LeftLimit, *RightLimit;
+	TGTextButton *Update;
+	RootFitLib_gui *Main=0;//указатель на главное окно
+	FunctionStringFrame(TGFrame *fFrame,RootFitLib_gui *Main_);
+	void UpdateFitFunction();
+	void UpdateValuesFromFitFunction(TFitFunction *func);
+	ClassDef(FunctionStringFrame,1);
 };
 
 class RootFitLib_gui : public TGMainFrame {
@@ -62,6 +82,7 @@ public:
    TGTextEntry         *fTeh1, *fTeh2, *fTeh3;
    TGTextBuffer        *fTbh1, *fTbh2, *fTbh3;
    TGCheckButton       *fCheck1, *fCheck2;
+   FunctionStringFrame *FSFrame=0;
    FitManager *fFitManager=0;
    //панели с управлением фитами
    FitButtonFrame *FitButtons;//управляющие кнопки для всех параметров
@@ -71,7 +92,7 @@ public:
    void GenerateParFrame(TFitFunction *func);
    void AnalyseFitFunctionAndCreatePanels(TFitFunction *func);
 	void CreateForms();
-
+	TGFrame *ActiveWidget = 0;//указатель на активный виджет. Нужен для передачи в обработчик DoCanvas
    RootFitLib_gui(string funcName="",FitManager *m=0);
    virtual ~RootFitLib_gui();
 
@@ -79,6 +100,8 @@ public:
    void DoText(const char *text);
    void DoSlider();
    void HandleButtons();
+   void DoCanvas(Int_t event, Int_t x, Int_t y, TObject *selected);
+   void (*ProcessCanvasFunction)(Int_t event, Int_t x, Int_t y, TObject *selected, TCanvas *c);
 
    ClassDef(RootFitLib_gui, 0);
 };

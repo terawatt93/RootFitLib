@@ -5,7 +5,8 @@ void FitCo60()
 	TFile f("spectrum.root");
 	TH1F spectrum=*(TH1F*)f.Get("spectrum");
 	FitManager *m=FitManager::GetPointer();
-	m->ReadFromTXT("fits.txt");
+	//m->ReadFromTXT("fits.txt");
+	m->ReadFromROOT("fits.root");
 	TFitFunction* fit=0;//указатель на фитирующую функцию
 	fit=m->FindFunction("FitFunction");//найти среди известных функций по имени (здесь-FitFunction)
 	if(!fit)//функция не найдена

@@ -1,8 +1,8 @@
 id_list: FitFunction 
 FitFunction func: gausn(0)+pol1(3) 1300.000000 1350.000000 1
-FitFunction par: 0 limited  free  8638.399025 0.000000 1000000.000000 196.323693 
-FitFunction par: 1 limited  free  1334.715379 1310.000000 1350.000000 0.032025 
-FitFunction par: 2 limited  free  1.393538 0.000000 20.000000 0.026093 
-FitFunction par: 3 not_limited  free  299.240826 0.000000 0.000000 66.871135 
-FitFunction par: 4 not_limited  free  -0.219147 0.000000 0.000000 0.050190 
+FitFunction par: 0 limited  free  8638.384743 0.000000 1000000.000000 196.323786 
+FitFunction par: 1 limited  free  1334.715377 1310.000000 1350.000000 0.032025 
+FitFunction par: 2 limited  free  1.393536 0.000000 20.000000 0.026093 
+FitFunction par: 3 not_limited  free  299.283594 0.000000 0.000000 66.871375 
+FitFunction par: 4 not_limited  free  -0.219179 0.000000 0.000000 0.050191 
 
