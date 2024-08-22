@@ -6,13 +6,13 @@ void FitCo60()
 	TH1F spectrum=*(TH1F*)f.Get("spectrum");
 	FitManager *m=FitManager::GetPointer();
 	//m->ReadFromTXT("fits.txt");
-	m->ReadFromROOT("fits.root");
+	//m->ReadFromROOT("fits.root");
 	TFitFunction* fit=0;//указатель на фитирующую функцию
 	fit=m->FindFunction("FitFunction");//найти среди известных функций по имени (здесь-FitFunction)
 	if(!fit)//функция не найдена
 	{
 		TString function_str;
-		function_str+=TString::Format("FitFunction gausn(0)+pol1(3) %f %f;",1300.0,1350.0);//форматированный ввод: имя(пробел)функция(пробел)левая_граница(пробел)правая_граница
+		function_str+=TString::Format("FitFunction gaus(0)+pol1(3) %f %f;",1300.0,1350.0);//форматированный ввод: имя(пробел)функция(пробел)левая_граница(пробел)правая_граница
 		function_str+=TString::Format(" 0 %f %f %f limited Name: Heigth_0;",spectrum.GetMaximum(),0.0,1.0e6);// порядок параметров: номер, значение, минимальное значение, максимальное значение, если есть ограничения, то написать "limited" 
 		function_str+=TString::Format(" 1 %f %f %f limited Name: Pos_0;",1332.0,1310.0,1350.0);
 		function_str+=TString::Format(" 2 %f %f %f limited Name: Sigma_0;",2.0,0.0,20.0);

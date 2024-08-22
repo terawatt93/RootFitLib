@@ -144,51 +144,216 @@ void FitParFrame::ClkParSet()
 	//cout<<Main->fFitFcn->id;
 	//cout<<" val\n";
 }
+
+double GetXCoordinate(int x)
+{
+	double result=gPad->GetCanvas()->AbsPixeltoX(x);
+	if(gPad->GetLogx()==1)
+	{
+		return pow(10,result);
+	}
+	return result;
+}
+double GetYCoordinate(int y)
+{
+	double result=gPad->GetCanvas()->AbsPixeltoY(y);
+	if(gPad->GetLogy()==1)
+	{
+		return pow(10,result);
+	}
+	return result;
+}
+
+void GetRangeAxis(double &x1,double &y1, double &x2, double &y2)
+{
+	gPad->GetCanvas()->GetRangeAxis(x1,y1,x2,y2);
+	if(gPad->GetLogx()==1)
+	{
+		x1=pow(10,x1);
+		x2=pow(10,x2);
+	}
+	if(gPad->GetLogy()==1)
+	{
+		y1=pow(10,y1);
+		y2=pow(10,y2);
+	}
+}
+
 void FitParFrame::ProcessCanvasFunction(int event,int x,int y, TObject *selected,TCanvas *c)
 {
-	cout<<ParName->GetString()<<" "<<event<<" "<<c->AbsPixeltoX(x)<<" "<<c->AbsPixeltoY(y)<<"\n";
+	TString ParNameStr=ParName->GetString();
+	//cout<<ParName->GetString()<<" "<<event<<" "<<c->AbsPixeltoX(x)<<" "<<c->AbsPixeltoY(y)<<"\n";
 	TH1D *h=0;
 	if(!Main)
 	{
 		cout<<"This is FitParFrame::ProcessCanvasFunction(): pointer to MainFrame is invalid!\n";
 		return;
 	}
-	if(!Main->FitFcn)
+	if(!Main->fFitFcn)
 	{
 		cout<<"This is FitParFrame::ProcessCanvasFunction(): pointer to FitFcn is invalid!\n";
 		return;
 	}
-	if(Main->FitFcn->fFitResult)
+	if(Main->fFitFcn->fFitResult)
 	{
-		h=&(Main->FitFcn->fFitResult->ReferenceHistogram);
+		h=&(Main->fFitFcn->fFitResult->ReferenceHistogram);
 	}
 	
-	double Min=0,Max=0;
-	
-	if(h)
+	double MinX=0,MaxX=0,MinY=0,MaxY=0;
+	GetRangeAxis(MinX,MinY,MaxX,MaxY);
+	//сценарии для разных параметров: пока только для гауссовых функций
+	if(ParNameStr.Index("Pos")>-1)//положение
 	{
-		double left,right;
-		Main->fFitFcn->Function.GetRange(left,right);
-		h->GetXaxis()->SetRangeUser(left,right);
-		Min=h->GetMinimum();
-		Max=h->GetMaximum();
-	}
-	else
-	{
-		double x1,x2;
-		c->GetRangeAxis(x1,Min,x2,Max);
-	}
-	
-	if(FitStage==0)
-	{
-		if(LeftBorder)
+		cout<<"stage:"<<FitStage<<"\n";
+		if(FitStage==0)//левая граница
 		{
-			delete LeftBorder;
+			
+			if(LeftBorder)
+			{
+				delete LeftBorder;
+				LeftBorder=0;
+			}
+			TLine l;
+			l.SetLineColor(2);
+			LeftBorder=l.DrawLine(GetXCoordinate(x),MinY, GetXCoordinate(x),MaxY);
+			//LeftBorder->SetBit(kCanDelete,false);
+			c->Modified();
+			c->Update();
+			if(event==11)//клик
+			{
+				MinLimit->SetNumber(c->AbsPixeltoX(x));
+				PointerToParameter->MinLimit=c->AbsPixeltoX(x);
+				c->Modified();
+				c->Update();
+				FitStage++;
+				return;
+			}
 		}
-		LeftBorder=new TLine();
-		LeftBorder->SetLineColor(2);
-		LeftBorder=LeftBorder->DrawLine(c->AbsPixeltoX(x),Min, c->AbsPixeltoX(x),Max);
-		//if(Event)
+		if(FitStage==1)//центорид
+		{
+			if(Centroid)
+			{
+				delete Centroid;
+				Centroid=0;
+			}
+			TLine l;
+			l.SetLineColor(3);
+			Centroid=l.DrawLine(GetXCoordinate(x),MinY, GetXCoordinate(x),MaxY);
+			//Centroid->SetBit(kCanDelete,false);
+			c->Modified();
+			c->Update();
+			if(event==11)//клик
+			{
+				ParValue->SetNumber(c->AbsPixeltoX(x));
+				PointerToParameter->Value=c->AbsPixeltoX(x);
+				FitStage++;
+				c->Modified();
+				c->Update();
+				return;
+			}
+		}
+		if(FitStage==2)//центорид
+		{
+			if(RightBorder)
+			{
+				delete RightBorder;
+				RightBorder=0;
+			}
+			TLine l;
+			l.SetLineColor(3);
+			RightBorder=l.DrawLine(GetXCoordinate(x),MinY, GetXCoordinate(x),MaxY);
+			c->Modified();
+			c->Update();
+			if(event==11)//клик
+			{
+				MaxLimit->SetNumber(c->AbsPixeltoX(x));
+				PointerToParameter->MaxLimit=c->AbsPixeltoX(x);
+				FitStage=0;
+				Main->ActiveWidget=0;
+				Main->fFitFcn->SetParameters();
+				c->Modified();
+				c->Update();
+				return;
+			}
+			//if(Event)
+		}
+	}
+	if(ParNameStr.Index("H")==0)//высота
+	{
+		//cout<<"h="<<c->AbsPixeltoY(y)<<"\n";
+		cout<<"stage:"<<FitStage<<"\n";
+		if(FitStage==0)//левая граница
+		{
+			
+			if(LeftBorder)
+			{
+				delete LeftBorder;
+				LeftBorder=0;
+			}
+			TLine l;
+			l.SetLineColor(2);
+			LeftBorder=l.DrawLine(MinX,GetYCoordinate(y), MaxX,GetYCoordinate(y));
+			//LeftBorder->SetBit(kCanDelete,false);
+			c->Modified();
+			c->Update();
+			if(event==11)//клик
+			{
+				MinLimit->SetNumber(GetYCoordinate(y));
+				PointerToParameter->MinLimit=GetYCoordinate(y);
+				c->Modified();
+				c->Update();
+				FitStage++;
+				return;
+			}
+		}
+		if(FitStage==1)//центорид
+		{
+			if(Centroid)
+			{
+				delete Centroid;
+				Centroid=0;
+			}
+			TLine l;
+			l.SetLineColor(3);
+			Centroid=l.DrawLine(MinX,GetYCoordinate(y), MaxX,GetYCoordinate(y));
+			//Centroid->SetBit(kCanDelete,false);
+			c->Modified();
+			c->Update();
+			if(event==11)//клик
+			{
+				ParValue->SetNumber(GetYCoordinate(y));
+				PointerToParameter->Value=GetYCoordinate(y);
+				FitStage++;
+				c->Modified();
+				c->Update();
+				return;
+			}
+		}
+		if(FitStage==2)//центорид
+		{
+			if(RightBorder)
+			{
+				delete RightBorder;
+				RightBorder=0;
+			}
+			TLine l;
+			l.SetLineColor(4);
+			RightBorder=l.DrawLine(MinX,GetYCoordinate(y), MaxX,GetYCoordinate(y));
+			c->Modified();
+			c->Update();
+			if(event==11)//клик
+			{
+				MaxLimit->SetNumber(GetYCoordinate(y));
+				PointerToParameter->MaxLimit=GetYCoordinate(y);
+				FitStage=0;
+				Main->ActiveWidget=0;
+				Main->fFitFcn->SetParameters();
+				c->Modified();
+				c->Update();
+				return;
+			}
+			//if(Event)
+		}
 	}
 	
 	return ;
