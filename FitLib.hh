@@ -38,7 +38,27 @@ vector<string> SplitStr(string s, string delimiter);
 class TFitFunction;
 class FitResult;
 
-TH1D CopyHistogramToTH1D(TH1 *RefHistogram,double Min, double Max);
+class TH1DTracked:public TH1D//класс, сохраняющий операции, проделанные над гистограммой
+{
+	public:
+	TH1DTracked():TH1D() { }
+	TH1DTracked(const char *name,const char *title,Int_t nbinsx,Double_t xlow,Double_t xup):TH1D(name,title,nbinsx,xlow,xup) { }
+	TH1DTracked(const char *name,const char *title,Int_t nbinsx,const Float_t  *xbins):TH1D(name,title,nbinsx,xbins) { }
+	TH1DTracked(const char *name,const char *title,Int_t nbinsx,const Double_t *xbins):TH1D(name,title,nbinsx,xbins) { }
+	
+	TH1 *ParentHistogram;//!
+	vector<string> Operations;
+	virtual TH1 * 	Rebin (Int_t ngroup=2, const char *newname="", const Double_t *xbins=nullptr);
+	virtual void 	Smooth (Int_t ntimes=1, Option_t *option="");
+	virtual void 	Scale (Double_t c1=1, Option_t *option="");
+	void ApplyOperations();
+	ClassDef(TH1DTracked,1);
+};
+
+TH1D CopyHistogramToTH1D(TH1 *RefHistogram,double Min=0, double Max=0);
+
+TH1DTracked CopyHistogramToTH1DTracked(TH1 *RefHistogram,double Min, double Max,TString Name,TString Title);
+
 
 class FitManager:public TObject
 {
@@ -77,7 +97,8 @@ class FitResult:public TObject
 	string id;
 	TFitFunction *Fit;
 	TString RefHistogramName;
-	TH1D ReferenceHistogram;
+	//TH1D ReferenceHistogram;
+	TH1DTracked ReferenceHistogram;
 };
 
 
@@ -152,6 +173,10 @@ class TFitFunction:public TObject
 	FitResult *fFitResult=0;//!
 	ClassDef(TFitFunction,1);
 };
+
+
+
+//TH1DTracked ToTrackedHistogram(TH1 *h);
 
 class GUIFit:public TGMainFrame
 {

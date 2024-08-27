@@ -4,12 +4,78 @@
 
 using namespace std;
 
+
+TH1DTracked CopyHistogramToTH1DTracked(TH1 *RefHistogram,double Min, double Max,TString Name,TString Title)
+{
+	double XMin=RefHistogram->GetXaxis()->GetXmin(), XMax=RefHistogram->GetXaxis()->GetXmax();
+	//диапазон гистограммы-2 диапазона фита
+	if(Min<XMin)
+	{
+		Min=XMin;
+	}
+	if(Max>XMax)
+	{
+		Max=XMax;
+	}
+	
+	int NBins=ceil((Max-Min)/RefHistogram->GetBinWidth(1));
+	//cout<<"HistLeft HistRight "<<HistLeft<<" "<<HistRight<<" "<<NBins<<" "<<hist->GetBinWidth(1)<<"\n";
+	TH1DTracked result(Name,Title,NBins,Min,Max);
+	int BinMin=RefHistogram->GetXaxis()->FindBin(Min), BinMax=RefHistogram->GetXaxis()->FindBin(Max);
+	
+	//cout<<"BinMin BinMax "<<BinMin<<" "<<BinMax<<"\n";
+	
+	int BinIterator=1;
+	for(int i=BinMin;i<=BinMax;i++)
+	{
+		result.SetBinContent(BinIterator,RefHistogram->GetBinContent(i));
+		result.SetBinError(BinIterator,RefHistogram->GetBinError(i));
+		BinIterator++;
+	}
+	return result;
+}
+
+TH1D CopyHistogramToTH1D(TH1 *RefHistogram,double Min, double Max)
+{
+	double XMin=RefHistogram->GetXaxis()->GetXmin(), XMax=RefHistogram->GetXaxis()->GetXmax();
+	if(Min==Max)
+	{
+		Min=XMin;
+		Max=XMax;
+	}
+	if(Min<XMin)
+	{
+		Min=XMin;
+	}
+	if(Max>XMax)
+	{
+		Max=XMax;
+	}
+	
+	int NBins=ceil((Max-Min)/RefHistogram->GetBinWidth(1));
+	//cout<<"HistLeft HistRight "<<HistLeft<<" "<<HistRight<<" "<<NBins<<" "<<hist->GetBinWidth(1)<<"\n";
+	TH1D result(RefHistogram->GetName(),RefHistogram->GetTitle(),NBins,Min,Max);
+	int BinMin=RefHistogram->GetXaxis()->FindBin(Min), BinMax=RefHistogram->GetXaxis()->FindBin(Max);
+	
+	//cout<<"BinMin BinMax "<<BinMin<<" "<<BinMax<<"\n";
+	
+	int BinIterator=1;
+	for(int i=BinMin;i<=BinMax;i++)
+	{
+		result.SetBinContent(BinIterator,RefHistogram->GetBinContent(i));
+		result.SetBinError(BinIterator,RefHistogram->GetBinError(i));
+		BinIterator++;
+	}
+	return result;
+}
+
 void FitManager::SaveToROOT(string filename)
 {
 	TFile f_out(filename.c_str(),"recreate");
 	for(unsigned int i=0;i<FitRes.size();i++)
 	{
-		f_out.WriteTObject(&(FitRes[i]->ReferenceHistogram));
+		TH1D hist=CopyHistogramToTH1D(&(FitRes[i]->ReferenceHistogram));
+		f_out.WriteTObject(&hist);
 		f_out.WriteTObject(&(FitRes[i]->Fit->Function));
 	}
 	stringstream ofs;
@@ -124,7 +190,7 @@ void FitManager::ReadFromROOT(string filename)
 				FR->id=ff->id;
 				FR->Fit=ff;
 				FR->RefHistogramName=HistName;
-				FR->ReferenceHistogram=*h;
+				FR->ReferenceHistogram=CopyHistogramToTH1DTracked(h,h->GetXaxis()->GetXmin(),h->GetXaxis()->GetXmax(),h->GetName(),h->GetTitle());
 				ff->fFitResult=FR;
 				ff->fManager=this;
 				FitRes.push_back(FR);
@@ -286,7 +352,7 @@ void FitManager::SaveFitRes(TFitFunction *f,TH1 *hist)
 	
 	int NBins=ceil((HistRight-HistLeft)/hist->GetBinWidth(1));
 	//cout<<"HistLeft HistRight "<<HistLeft<<" "<<HistRight<<" "<<NBins<<" "<<hist->GetBinWidth(1)<<"\n";
-	res->ReferenceHistogram=TH1D(TString::Format("%s_hist",f->id.c_str()),TString::Format("%s_hist: FitResult; ",f->id.c_str()),NBins,HistLeft,HistRight);
+	res->ReferenceHistogram=TH1DTracked(TString::Format("%s_hist",f->id.c_str()),TString::Format("%s_hist: FitResult; ",f->id.c_str()),NBins,HistLeft,HistRight);
 	int BinMin=hist->GetXaxis()->FindBin(HistLeft), BinMax=hist->GetXaxis()->FindBin(HistRight);
 	
 	//cout<<"BinMin BinMax "<<BinMin<<" "<<BinMax<<"\n";
@@ -648,6 +714,11 @@ void  TFitFunction::SetParName(int ParNumber,TString Name)
 	}
 }
 
+TH1DTracked ToTrackedHistogram(TH1 *h)
+{
+	
+}
+
 TString TFitFunction::GetParName(int ParNumber)
 {
 	if(ParNumber<parameters.size())
@@ -944,7 +1015,21 @@ void TFitFunctionComponent::FromString(string input)
 	}
 }
 
-
+TH1 * 	TH1DTracked::Rebin (Int_t ngroup, const char *newname, const Double_t *xbins)
+{
+	Operations.push_back(TString::Format("Rebin %d",ngroup).Data());
+	return TH1::Rebin (ngroup,newname,xbins);
+}
+void 	TH1DTracked::Smooth (Int_t ntimes, Option_t *option)
+{
+	Operations.push_back(TString::Format("Smooth %d",ntimes).Data());
+	TH1::Smooth (ntimes,option);
+}
+void 	TH1DTracked::Scale (Double_t c1, Option_t *option)
+{
+	Operations.push_back(TString::Format("Scale %f",c1).Data());
+	TH1::Scale(c1,option);
+}
 
 GUIFit::GUIFit():TGMainFrame(gClient->GetRoot(),200, 200)
 {

@@ -3,4 +3,5 @@
 #pragma link C++ class TFitFunction+;
 #pragma link C++ class FitManager+;
 #pragma link C++ class GUIFit+;
+#pragma link C++ class TH1DTracked+;
 #endif
