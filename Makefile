@@ -2,7 +2,7 @@ CXX = `root-config --cxx`
 CXXFLAGS = `root-config --cflags` -fPIC -g -Wall
 ROOTLIBS = `root-config --glibs`
 SHARED = -shared
-SRCS =FitLibDict.cxx FitLib.cpp
+SRCS =FitLibDict.cxx FitLib.cpp gui/FitLibGUI.cpp
 HDRS = FitLibLinkDef.h FitLib.hh
 
 PROGRAM = FitLib.so

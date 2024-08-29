@@ -1003,6 +1003,11 @@ void TFitFunction::FromString(string input)
 	SetParameters();
 }
 
+void TFitFunction::LaunchGUI()
+{
+	new RootFitLib_gui(id,fManager);
+}
+
 void TFitFunctionComponent::FromString(string input)
 {
 	vector<string> strings=SplitStr(input,";");
@@ -1090,14 +1095,3 @@ void 	TH1DTracked::Scale (Double_t c1, Option_t *option)
 	Operations.push_back(TString::Format("Scale %f",c1).Data());
 	TH1::Scale(c1,option);
 }
-
-GUIFit::GUIFit():TGMainFrame(gClient->GetRoot(),200, 200)
-{
-	//fMainFrame = new TGHorizontalFrame(this, 5, 5, 5, 5);
-	//AddFrame(fMainFrame, new TGLayoutHints(kLHintsRight | kLHintsExpandX |kLHintsExpandY));
-	fCanvas = new TRootEmbeddedCanvas("Canvas", this, 150,150);
-	MapSubwindows();
-	Resize(GetDefaultSize());
-	MapWindow();
-}
-
