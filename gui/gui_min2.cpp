@@ -45,9 +45,15 @@ EButtonState Pressed(bool value)
 FitButtonFrame::FitButtonFrame(TGFrame *fFrame,RootFitLib_gui *Main): TGHorizontalFrame(fFrame, 0, 0, 0)
 {
 	Update = new TGTextButton(this,"Update");
+	Fit = new TGTextButton(this,"Fit");
+	SaveToFile = new TGTextButton(this,"Save to file");
 	AddFrame(Update, new TGLayoutHints(kLHintsCenterX|kLHintsCenterY,20, 20, 20, 20));
+	AddFrame(Fit, new TGLayoutHints(kLHintsCenterX|kLHintsCenterY,20, 20, 20, 20));
+	AddFrame(SaveToFile, new TGLayoutHints(kLHintsCenterX|kLHintsCenterY,20, 20, 20, 20));
 	fMainFrame=Main;
 	Update->Connect("Clicked()","FitButtonFrame", this, "FUpdate()");
+	Fit->Connect("Clicked()","FitButtonFrame", this, "FFit()");
+	SaveToFile->Connect("Clicked()","FitButtonFrame", this, "FSaveToFile()");
 }
 void FitButtonFrame::FUpdate()
 {
@@ -76,8 +82,31 @@ void FitButtonFrame::FUpdate()
 		fMainFrame->FitParameters[i]->FromTFitFunction(func,i);
 	}
 }
-
-
+void FitButtonFrame::FFit()
+{
+	if(!(fMainFrame->fFitFcn))
+	{
+		cout<<"This is FitButtonFrame::FFit():: fitfunction does not set. Returned\n";
+		return;
+	}
+	if(!(fMainFrame->fFitFcn->fFitResult))
+	{
+		cout<<"This is FitButtonFrame::FFit():: fFitResult does not set. Returned\n";
+		return;
+	}
+	//cout<<"integral:"<<fMainFrame->fFitFcn->fFitResult->ReferenceHistogram.Integral();
+	fMainFrame->fFitFcn->Fit(&(fMainFrame->fFitFcn->fFitResult->ReferenceHistogram));
+	fMainFrame->fFitFcn->fFitResult->ReferenceHistogram.Draw("e hist");
+	fMainFrame->fFitFcn->Function.Draw("same");
+	gPad->Update();
+	TFile f("test.root","recreate");
+	f.WriteTObject(&(fMainFrame->fFitFcn->fFitResult->ReferenceHistogram));
+	f.Close();
+}
+void FSaveToFile()
+{
+	
+}
 
 void FitParFrame :: FromTFitFunction(TFitFunction *func,int ParNum)
 {
@@ -125,13 +154,13 @@ FitParFrame::FitParFrame(TGFrame *fFrame,TString ParName_) : TGHorizontalFrame(f
 	Limited=new TGCheckButton(this,"Limited");
 	ParName=new TGTextButton(this, TString::Format("%-10s\t",ParName_.Data()));
 	
-	AddFrame(ParName,new TGLayoutHints(kLHintsLeft|kLHintsCenterY, 0));
-	AddFrame(ParValue, new TGLayoutHints(kLHintsCenterY | kLHintsLeft, 1, 5, 1, 5));
-	AddFrame(ParError, new TGLayoutHints(kLHintsCenterY | kLHintsLeft, 1, 5, 1, 5));
-	AddFrame(MinLimit, new TGLayoutHints(kLHintsCenterY | kLHintsLeft, 1, 5, 1, 5));
-	AddFrame(MaxLimit, new TGLayoutHints(kLHintsCenterY | kLHintsLeft, 1, 5, 1, 5));
-	AddFrame(Fixed, new TGLayoutHints(kLHintsCenterY | kLHintsLeft, 1, 5, 1, 5));
-	AddFrame(Limited, new TGLayoutHints(kLHintsCenterY | kLHintsLeft, 1, 5, 1, 5));
+	AddFrame(ParName,new TGLayoutHints(kLHintsLeft|kLHintsTop, 0));
+	AddFrame(ParValue, new TGLayoutHints(kLHintsTop | kLHintsLeft, 1, 5, 1, 5));
+	AddFrame(ParError, new TGLayoutHints(kLHintsTop | kLHintsLeft, 1, 5, 1, 5));
+	AddFrame(MinLimit, new TGLayoutHints(kLHintsTop | kLHintsLeft, 1, 5, 1, 5));
+	AddFrame(MaxLimit, new TGLayoutHints(kLHintsTop | kLHintsLeft, 1, 5, 1, 5));
+	AddFrame(Fixed, new TGLayoutHints(kLHintsTop | kLHintsLeft, 1, 5, 1, 5));
+	AddFrame(Limited, new TGLayoutHints(kLHintsTop | kLHintsLeft, 1, 5, 1, 5));
 	ParName->Connect("Clicked()","FitParFrame", this, "ClkParSet()");
 	//MinLimit->Connect("Clicked()","FitParFrame", this, "ClkLimit()");
 	//MaxLimit->Connect("Clicked()","FitParFrame", this, "ClkLimit()");
@@ -273,6 +302,24 @@ void FitParFrame::ProcessCanvasFunction(int event,int x,int y, TObject *selected
 				Main->fFitFcn->SetParameters();
 				c->Modified();
 				c->Update();
+				
+				//для избежания segfault при переходе к другим параметрам
+				if(LeftBorder)
+				{
+					delete LeftBorder;
+					LeftBorder=0;
+				}
+				if(Centroid)
+				{
+					delete Centroid;
+					Centroid=0;
+				}
+				if(RightBorder)
+				{
+					delete RightBorder;
+					RightBorder=0;
+				}
+				
 				return;
 			}
 			//if(Event)
@@ -370,11 +417,11 @@ FunctionStringFrame::FunctionStringFrame(TGFrame *fFrame,RootFitLib_gui *Main_) 
 	LeftLimit=new TGNumberEntry(this,0,9);
 	RightLimit=new TGNumberEntry(this,0,9);
 	Update=new TGTextButton(this,"Update");
-	AddFrame(FuncName,new TGLayoutHints(kLHintsLeft|kLHintsCenterY, 0));
-	AddFrame(FuncField,new TGLayoutHints(kLHintsLeft|kLHintsCenterY, 0));
-	AddFrame(LeftLimit,new TGLayoutHints(kLHintsLeft|kLHintsCenterY, 0));
-	AddFrame(RightLimit,new TGLayoutHints(kLHintsLeft|kLHintsCenterY, 0));
-	AddFrame(Update,new TGLayoutHints(kLHintsLeft|kLHintsCenterY, 0));
+	AddFrame(FuncName,new TGLayoutHints(kLHintsLeft|kLHintsTop, 0));
+	AddFrame(FuncField,new TGLayoutHints(kLHintsLeft|kLHintsTop, 0));
+	AddFrame(LeftLimit,new TGLayoutHints(kLHintsLeft|kLHintsTop, 0));
+	AddFrame(RightLimit,new TGLayoutHints(kLHintsLeft|kLHintsTop, 0));
+	AddFrame(Update,new TGLayoutHints(kLHintsLeft|kLHintsTop, 0));
 	Main=Main_;
 	Update->Connect("Clicked()","FunctionStringFrame", this, "UpdateFitFunction()");
 }
@@ -427,7 +474,7 @@ void RootFitLib_gui::GenerateParFrame(int NPar)
 
 void RootFitLib_gui::GenerateParFrame(TFitFunction *func)
 {
-	TGLayoutHints *Lay=new TGLayoutHints(kFixedWidth | kLHintsExpandY, 1, 1, 1, 1);
+	TGLayoutHints *Lay=new TGLayoutHints(kFixedWidth | kLHintsTop, 1, 1, 1, 1);
 	for(unsigned int i=0;i<func->parameters.size();i++)
 	{
 		FitParFrame *fP=new FitParFrame(fVframe1,TString::Format("par %d",i));
@@ -463,7 +510,8 @@ void RootFitLib_gui::CreateForms()
 	FSFrame=new FunctionStringFrame(fVframe1,this);
 	FSFrame->UpdateValuesFromFitFunction(fFitFcn);
 	
-	fVframe1->AddFrame(FSFrame,new TGLayoutHints(kFixedWidth | kFixedHeight|kLHintsTop, 1, 1, 1, 1));
+	//fVframe1->AddFrame(FSFrame,new TGLayoutHints(kFixedWidth | kFixedHeight|kLHintsTop, 1, 1, 1, 1));
+	fVframe1->AddFrame(FSFrame,new TGLayoutHints(kLHintsTop, 1, 1, 1, 1));
 	
 	AnalyseFitFunctionAndCreatePanels(fFitFcn);
 	fCanvas->GetCanvas()->cd();
@@ -478,7 +526,7 @@ void RootFitLib_gui::CreateForms()
 		fFitFcn->Function.Draw();
 	}
 	FitButtons=new FitButtonFrame(fVframe1,this);
-	fVframe1->AddFrame(FitButtons,new TGLayoutHints(kFixedWidth | kFixedHeight|kLHintsBottom, 1, 1, 1, 1));
+	fVframe1->AddFrame(FitButtons,new TGLayoutHints(kLHintsBottom, 1, 1, 1, 1));
 	
 	
 	
@@ -596,7 +644,7 @@ void RootFitLib_gui::AnalyseFitFunctionAndCreatePanels(TFitFunction *func)
 		}
 		GroupedParameters.push_back(gr);
 		gr->SetTextColor(UColor(i));
-		fVframe1->AddFrame(gr, new TGLayoutHints(kFixedWidth | kLHintsExpandY, 1, 1, 1, 1));
+		fVframe1->AddFrame(gr, new TGLayoutHints(kFixedWidth | kLHintsTop, 1, 1, 1, 1));
 	}
 	TGGroupFrame* gr=new TGGroupFrame(fVframe1,"");
 	for(unsigned int i=0;i<Non_grouped.size();i++)
@@ -608,7 +656,7 @@ void RootFitLib_gui::AnalyseFitFunctionAndCreatePanels(TFitFunction *func)
 		gr->AddFrame(fP, Lay);
 		fP->Resize(200,30);
 	}
-	fVframe1->AddFrame(gr, new TGLayoutHints(kFixedWidth | kFixedHeight, 1, 1, 1, 1));
+	fVframe1->AddFrame(gr, new TGLayoutHints(kFixedWidth |kLHintsTop, 1, 1, 1, 1));
 }
 
 //______________________________________________________________________________
@@ -632,6 +680,7 @@ void gui_min2()
 {
 	//TFile f("SiO2_fits.root");
 	FitManager *m=FitManager::GetPointer();
+	m->FileName="../tutorial/fits.root";
 	m->ReadFromROOT("../tutorial/fits.root");
    new RootFitLib_gui("FitFunction",m);
 }

@@ -1,11 +1,16 @@
 #include "TGButton.h"
 #include "TRootEmbeddedCanvas.h"
 #include "TGLayout.h"
+#include "TGNumberEntry.h"
+#include "TGLabel.h"
 #include "TF1.h"
 #include "TMath.h"
 #include "TCanvas.h"
 #include "TGTextEntry.h"
 #include "TGTripleSlider.h"
+#include "TGButton.h"
+#include "TGFrame.h"
+#include "TLine.h"
 #include "FitLib.hh"
 #pragma once
 
@@ -28,11 +33,13 @@ class RootFitLib_gui;
 class FitButtonFrame : public TGHorizontalFrame //полоса с кнопками под параметрами
 {
 	public:
-	TGTextButton *Update;
+	TGTextButton *Update,*Fit,*SaveToFile;
 	RootFitLib_gui *fMainFrame=0;
 	TFitFunction* func;
 	FitButtonFrame(TGFrame *fFrame,RootFitLib_gui *Main);
 	void FUpdate();
+	void FFit();
+	void FSaveToFile();
 	ClassDef(FitButtonFrame,1);
 };
 
@@ -99,7 +106,6 @@ public:
 	TGFrame *ActiveWidget = 0;//указатель на активный виджет. Нужен для передачи в обработчик DoCanvas
    RootFitLib_gui(string funcName="",FitManager *m=0);
    virtual ~RootFitLib_gui();
-
    void CloseWindow();
    void DoText(const char *text);
    void DoSlider();

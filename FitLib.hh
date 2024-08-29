@@ -66,8 +66,12 @@ class FitManager:public TObject
 	static FitManager& Instance();
 	static FitManager* GetPointer();
 
+	TFile *file_for_work=0;
+	TString FileName="";
+
 	vector<FitResult*> FitRes;
 	vector<TFitFunction*> Functions;
+	vector<TH1D*> ParentHistograms;
 
 	TFitFunction* BookFunction(string InputStr,bool AddNew=false);
 	TFitFunction* BookFunction(TString Name,TString Function,double XMin,double XMax,bool AddNew=false);
@@ -75,9 +79,15 @@ class FitManager:public TObject
 	void SaveFitRes(TFitFunction *f,TH1 *hist);
 	void SaveToTXT(string filename);
 	void ReadFromTXT(string filename);
-	void ReadFromROOT(string filename);
-	void PrintToPDF(string filename);
-	void SaveToROOT(string filename);
+	void ReadFromROOT(string filename="");
+	void UpdateInROOT(string filename="");
+	
+	void ReadFromROOT(TFile *f);
+	void UpdateInROOT(TFile *f);
+	
+	void PrintToPDF(string filename="");
+	void SaveToROOT(string filename="");
+	void SaveToROOT(TFile *f);
 	int GetPageNumberInPDF(TFitFunction *function);
 	int GetPageNumberInPDF(string ID);
 	bool MultiplyToChi2=true;

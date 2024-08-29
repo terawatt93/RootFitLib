@@ -69,14 +69,13 @@ TH1D CopyHistogramToTH1D(TH1 *RefHistogram,double Min, double Max)
 	return result;
 }
 
-void FitManager::SaveToROOT(string filename)
+void FitManager::SaveToROOT(TFile *f_out)
 {
-	TFile f_out(filename.c_str(),"recreate");
 	for(unsigned int i=0;i<FitRes.size();i++)
 	{
 		TH1D hist=CopyHistogramToTH1D(&(FitRes[i]->ReferenceHistogram));
-		f_out.WriteTObject(&hist);
-		f_out.WriteTObject(&(FitRes[i]->Fit->Function));
+		f_out->WriteTObject(&hist);
+		f_out->WriteTObject(&(FitRes[i]->Fit->Function));
 	}
 	stringstream ofs;
 	ofs<<"id_list: ";
@@ -90,7 +89,13 @@ void FitManager::SaveToROOT(string filename)
 		ofs<<Functions[i]->AsString(i+1)<<"\n";
 	}
 	string result=ofs.str();
-	f_out.WriteObject(&result,"FitFunctionsList");
+	f_out->WriteObject(&result,"FitFunctionsList");
+}
+
+void FitManager::SaveToROOT(string filename)
+{
+	TFile f_out(filename.c_str(),"recreate");
+	SaveToROOT(&f_out);
 	f_out.Close();
 }
 
@@ -125,79 +130,12 @@ void FitManager::SaveToTXT(string filename)
 
 void FitManager::ReadFromROOT(string filename)
 {
+	if(filename=="")
+	{
+		filename=string(FileName.Data());
+	}
 	TFile f(filename.c_str());
-	
-	if(f.Get("FitFunctionsList"))
-	{
-		string FitList=*(f.Get<string>("FitFunctionsList"));
-		Clear();
-		stringstream ifs(FitList);
-		string line;
-		vector<string> id_list;
-		while(getline(ifs,line))
-		{
-			int pos=line.find("id_list:");
-			if(pos>=0)
-			{
-				stringstream sstr(line.substr(pos+8,line.size()));
-				while(sstr)
-				{
-					string id_str;
-					sstr>>id_str;
-					id_list.push_back(id_str);
-				}
-
-			}
-		}
-		for(unsigned int i=0;i<id_list.size();i++)
-		{
-			TFitFunction *f=new TFitFunction();
-			f->id=id_list[i];
-			f->FromStringObject(FitList);
-			if(f->parameters.size()>0)
-			{
-				Functions.push_back(f);
-			}
-		}
-	}
-	
-	TIter keyList(f.GetListOfKeys());
-	TKey *key;
-	while ((key = (TKey*)keyList()))
-	{
-		if(string(key->GetClassName())=="TF1")
-		{
-			TString id(key->GetName());
-			id.ReplaceAll("fit_","");
-			TFitFunction *ff=FindFunction(id.Data());
-			if(!ff)
-			{
-				ff=new TFitFunction();
-				ff->id=id.Data();
-				ff->Function=*((TF1*)f.Get(key->GetName()));
-				ff->Function.GetRange(ff->LeftBorder,ff->RightBorder);
-				ff->func_str=ff->Function.GetTitle();
-				ff->GetParameters();
-				Functions.push_back(ff);
-			}
-			
-			TString HistName=TString::Format("%s_hist",id.Data());
-			HistName.ReplaceAll("fit_","");
-			TH1D *h=(TH1D*)f.Get(HistName);
-			if(h)
-			{
-				FitResult* FR=new FitResult();
-				FR->id=ff->id;
-				FR->Fit=ff;
-				FR->RefHistogramName=HistName;
-				FR->ReferenceHistogram=CopyHistogramToTH1DTracked(h,h->GetXaxis()->GetXmin(),h->GetXaxis()->GetXmax(),h->GetName(),h->GetTitle());
-				ff->fFitResult=FR;
-				ff->fManager=this;
-				FitRes.push_back(FR);
-			}
-		}
-	}
-	
+	ReadFromROOT(&f);
 }
 
 void FitManager::ReadFromTXT(string filename)
@@ -232,6 +170,122 @@ void FitManager::ReadFromTXT(string filename)
 		}
 	}
 }
+
+void FitManager::UpdateInROOT(string filename)
+{
+	if(filename=="")
+	{
+		filename=string(FileName.Data());
+	}
+	TFile f(filename.c_str(),"update");
+	UpdateInROOT(&f);
+	f.Close();
+}
+void FitManager::UpdateInROOT(TFile *f_out)
+{
+	for(unsigned int i=0;i<FitRes.size();i++)
+	{
+		TH1D hist=CopyHistogramToTH1D(&(FitRes[i]->ReferenceHistogram));
+		f_out->WriteTObject(&hist,hist.GetName(),"overwrite");
+		f_out->WriteTObject(&(FitRes[i]->Fit->Function),FitRes[i]->Fit->Function.GetName(),"overwrite");
+	}
+	stringstream ofs;
+	ofs<<"id_list: ";
+	for(unsigned int i=0;i<Functions.size();i++)
+	{
+		ofs<<Functions[i]->id<<" ";
+	}
+	ofs<<"\n";
+	for(unsigned int i=0;i<Functions.size();i++)
+	{
+		ofs<<Functions[i]->AsString(i+1)<<"\n";
+	}
+	string result=ofs.str();
+	f_out->WriteObject(&result,"FitFunctionsList","overwrite");
+}
+void FitManager::ReadFromROOT(TFile *f)
+{
+	if(!f)
+	{
+		cout<<"This is FitManager::ReadFromROOT: pointer to TFile is invalid. Returned;\n";
+		return;
+	}
+	if(f->Get("FitFunctionsList"))
+	{
+		string FitList=*(f->Get<string>("FitFunctionsList"));
+		Clear();
+		stringstream ifs(FitList);
+		string line;
+		vector<string> id_list;
+		while(getline(ifs,line))
+		{
+			int pos=line.find("id_list:");
+			if(pos>=0)
+			{
+				stringstream sstr(line.substr(pos+8,line.size()));
+				while(sstr)
+				{
+					string id_str;
+					sstr>>id_str;
+					id_list.push_back(id_str);
+				}
+
+			}
+		}
+		for(unsigned int i=0;i<id_list.size();i++)
+		{
+			TFitFunction *f=new TFitFunction();
+			f->id=id_list[i];
+			f->FromStringObject(FitList);
+			if(f->parameters.size()>0)
+			{
+				Functions.push_back(f);
+			}
+		}
+	}
+	
+	TIter keyList(f->GetListOfKeys());
+	TKey *key;
+	while ((key = (TKey*)keyList()))
+	{
+		if(string(key->GetClassName())=="TF1")
+		{
+			TString id(key->GetName());
+			id.ReplaceAll("fit_","");
+			TFitFunction *ff=FindFunction(id.Data());
+			if(!ff)
+			{
+				ff=new TFitFunction();
+				ff->id=id.Data();
+				ff->Function=*((TF1*)f->Get(key->GetName()));
+				ff->Function.GetRange(ff->LeftBorder,ff->RightBorder);
+				ff->func_str=ff->Function.GetTitle();
+				ff->GetParameters();
+				Functions.push_back(ff);
+			}
+			
+			TString HistName=TString::Format("%s_hist",id.Data());
+			HistName.ReplaceAll("fit_","");
+			TH1D *h=(TH1D*)f->Get(HistName);
+			if(h)
+			{
+				FitResult* FR=new FitResult();
+				FR->id=ff->id;
+				FR->Fit=ff;
+				FR->RefHistogramName=HistName;
+				FR->ReferenceHistogram=CopyHistogramToTH1DTracked(h,h->GetXaxis()->GetXmin(),h->GetXaxis()->GetXmax(),h->GetName(),h->GetTitle());
+				ff->fFitResult=FR;
+				ff->fManager=this;
+				FitRes.push_back(FR);
+			}
+		}
+	}
+}
+void UpdateInROOT(TFile *f)
+{
+	
+}
+
 void FitManager::PrintToPDF(string filename)
 {
 	TCanvas *c=0;
@@ -323,11 +377,14 @@ TFitFunction* FitManager::FindFunction(string ID)
 void FitManager::SaveFitRes(TFitFunction *f,TH1 *hist)
 {
 	FitResult *res=0;
+	bool found=false;
 	for(unsigned int i=0;i<FitRes.size();i++)
 	{
 		if(FitRes[i]->id==f->id)
 		{
 			res=FitRes[i];
+			found=true;
+			break;
 		}
 	}
 	if(!res)
@@ -352,7 +409,7 @@ void FitManager::SaveFitRes(TFitFunction *f,TH1 *hist)
 	
 	int NBins=ceil((HistRight-HistLeft)/hist->GetBinWidth(1));
 	//cout<<"HistLeft HistRight "<<HistLeft<<" "<<HistRight<<" "<<NBins<<" "<<hist->GetBinWidth(1)<<"\n";
-	res->ReferenceHistogram=TH1DTracked(TString::Format("%s_hist",f->id.c_str()),TString::Format("%s_hist: FitResult; ",f->id.c_str()),NBins,HistLeft,HistRight);
+	TH1DTracked ReferenceHistogram(TString::Format("%s_hist",f->id.c_str()),TString::Format("%s_hist: FitResult; ",f->id.c_str()),NBins,HistLeft,HistRight);
 	int BinMin=hist->GetXaxis()->FindBin(HistLeft), BinMax=hist->GetXaxis()->FindBin(HistRight);
 	
 	//cout<<"BinMin BinMax "<<BinMin<<" "<<BinMax<<"\n";
@@ -360,11 +417,14 @@ void FitManager::SaveFitRes(TFitFunction *f,TH1 *hist)
 	int BinIterator=1;
 	for(int i=BinMin;i<=BinMax;i++)
 	{
-		res->ReferenceHistogram.SetBinContent(BinIterator,hist->GetBinContent(i));
-		res->ReferenceHistogram.SetBinError(BinIterator,hist->GetBinError(i));
+		ReferenceHistogram.SetBinContent(BinIterator,hist->GetBinContent(i));
+		ReferenceHistogram.SetBinError(BinIterator,hist->GetBinError(i));
+		//cout<<"ReferenceHistogram:SetBinContent("<<BinIterator<<","<<hist->GetBinContent(i)<<") "<<i<< "\n";
 		BinIterator++;
 	}
 	f->fFitResult=res;
+	res->ReferenceHistogram=ReferenceHistogram;
+	if(!found)
 	FitRes.push_back(res);
 	
 }
