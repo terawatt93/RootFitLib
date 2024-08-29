@@ -1,4 +1,4 @@
-//#pragma once
+
 #include <sstream>
 #include <iostream>
 #include <fstream>
@@ -37,6 +37,7 @@
 #include "TGButton.h"
 #include "TGFrame.h"
 #include "TLine.h"
+#pragma once
 
 class FitParFrame;
 class RootFitLib_gui;
