@@ -103,8 +103,19 @@ void FitButtonFrame::FFit()
 	f.WriteTObject(&(fMainFrame->fFitFcn->fFitResult->ReferenceHistogram));
 	f.Close();
 }
-void FSaveToFile()
+void FitButtonFrame::FSaveToFile()
 {
+	if(!(fMainFrame->fFitFcn))
+	{
+		cout<<"This is FitButtonFrame::FSaveToFile():: fitfunction does not set. Returned\n";
+		return;
+	}
+	if(!(fMainFrame->fFitFcn->fManager))
+	{
+		cout<<"This is FitButtonFrame::FSaveToFile():: pointer to fManager is invalid. Returned\n";
+		return;
+	}
+	fMainFrame->fFitFcn->fManager->UpdateInROOT(0);
 	
 }
 

@@ -183,6 +183,16 @@ void FitManager::UpdateInROOT(string filename)
 }
 void FitManager::UpdateInROOT(TFile *f_out)
 {
+	if(!f_out)
+	{
+		f_out=file_for_work;
+	}
+	if(!file_for_work)
+	{
+		cout<<"This is FitManager::UpdateInROOT(TFile *f_out): both pointers (f_out) и file_for_work are invalid! Returned\n";
+		return;
+	}
+	f_out->ReOpen("update");
 	for(unsigned int i=0;i<FitRes.size();i++)
 	{
 		TH1D hist=CopyHistogramToTH1D(&(FitRes[i]->ReferenceHistogram));
@@ -212,6 +222,7 @@ void FitManager::ReadFromROOT(TFile *f)
 	}
 	if(f->Get("FitFunctionsList"))
 	{
+		file_for_work=f;
 		string FitList=*(f->Get<string>("FitFunctionsList"));
 		Clear();
 		stringstream ifs(FitList);
@@ -280,10 +291,6 @@ void FitManager::ReadFromROOT(TFile *f)
 			}
 		}
 	}
-}
-void UpdateInROOT(TFile *f)
-{
-	
 }
 
 void FitManager::PrintToPDF(string filename)

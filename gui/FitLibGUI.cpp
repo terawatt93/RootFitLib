@@ -48,6 +48,11 @@ FitButtonFrame::FitButtonFrame(TGFrame *fFrame,RootFitLib_gui *Main): TGHorizont
 	Update = new TGTextButton(this,"Update");
 	Fit = new TGTextButton(this,"Fit");
 	SaveToFile = new TGTextButton(this,"Save to file");
+	Next = new TGTextButton(this,"Next fit");
+	Prev = new TGTextButton(this,"Prev fit");
+	Find = new TGTextButton(this,"Find function");
+	
+	
 	AddFrame(Update, new TGLayoutHints(kLHintsCenterX|kLHintsCenterY,20, 20, 20, 20));
 	AddFrame(Fit, new TGLayoutHints(kLHintsCenterX|kLHintsCenterY,20, 20, 20, 20));
 	AddFrame(SaveToFile, new TGLayoutHints(kLHintsCenterX|kLHintsCenterY,20, 20, 20, 20));
@@ -116,7 +121,7 @@ void FitButtonFrame::FSaveToFile()
 		cout<<"This is FitButtonFrame::FSaveToFile(): pointer to fManager->fFitFcn is invalid\n";
 		return;
 	}
-	fMainFrame->fFitFcn->fManager->UpdateInROOT();
+	fMainFrame->fFitFcn->fManager->UpdateInROOT(0);
 	
 }
 
@@ -312,10 +317,7 @@ void FitParFrame::ProcessCanvasFunction(int event,int x,int y, TObject *selected
 				FitStage=0;
 				Main->ActiveWidget=0;
 				Main->fFitFcn->SetParameters();
-				c->Modified();
-				c->Update();
 				
-				//для избежания segfault при переходе к другим параметрам
 				if(LeftBorder)
 				{
 					delete LeftBorder;
@@ -331,6 +333,15 @@ void FitParFrame::ProcessCanvasFunction(int event,int x,int y, TObject *selected
 					delete RightBorder;
 					RightBorder=0;
 				}
+				
+				Main->fFitFcn->fFitResult->ReferenceHistogram.Draw();
+				Main->fFitFcn->Draw("same");
+				
+				c->Modified();
+				c->Update();
+				
+				//для избежания segfault при переходе к другим параметрам
+
 				
 				return;
 			}
@@ -407,8 +418,31 @@ void FitParFrame::ProcessCanvasFunction(int event,int x,int y, TObject *selected
 				FitStage=0;
 				Main->ActiveWidget=0;
 				Main->fFitFcn->SetParameters();
+				
+				if(LeftBorder)
+				{
+					delete LeftBorder;
+					LeftBorder=0;
+				}
+				if(Centroid)
+				{
+					delete Centroid;
+					Centroid=0;
+				}
+				if(RightBorder)
+				{
+					delete RightBorder;
+					RightBorder=0;
+				}
+				
+				Main->fFitFcn->fFitResult->ReferenceHistogram.Draw();
+				Main->fFitFcn->Draw("same");
+				
 				c->Modified();
 				c->Update();
+				
+
+				
 				return;
 			}
 			//if(Event)

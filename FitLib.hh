@@ -202,7 +202,8 @@ class TFitFunction:public TObject
 class FitButtonFrame : public TGHorizontalFrame //полоса с кнопками под параметрами
 {
 	public:
-	TGTextButton *Update,*Fit,*SaveToFile;
+	TGTextButton *Update,*Fit,*SaveToFile, *Next, *Prev, *Find;
+	TGTextEntry *FunctionNameField;
 	RootFitLib_gui *fMainFrame=0;
 	TFitFunction* func;
 	FitButtonFrame(TGFrame *fFrame,RootFitLib_gui *Main);
