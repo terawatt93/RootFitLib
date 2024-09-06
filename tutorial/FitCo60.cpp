@@ -20,7 +20,7 @@ void FitCo60()
 		function_str+=TString::Format(" 4 %f",0.0);
 		fit=m->BookFunction(function_str.Data());
 	}
-	fit->Fit(&spectrum,true);
+	fit->Fit(&spectrum,true,&spectrum);
 	cout<<"Fit result:\n";
 	cout<<"Area: "<<fit->GetParameter(0)<<" err: "<<fit->GetParError(0)<<"\n";
 	cout<<"Pos: "<<fit->GetParameter(1)<<" err: "<<fit->GetParError(1)<<"\n";

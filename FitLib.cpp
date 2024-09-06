@@ -17,7 +17,11 @@ TH1DTracked CopyHistogramToTH1DTracked(TH1 *RefHistogram,double Min, double Max,
 	{
 		Max=XMax;
 	}
-	
+	if(Min==Max)
+	{
+		Min=XMin;
+		Max=XMax;
+	}
 	int NBins=ceil((Max-Min)/RefHistogram->GetBinWidth(1));
 	//cout<<"HistLeft HistRight "<<HistLeft<<" "<<HistRight<<" "<<NBins<<" "<<hist->GetBinWidth(1)<<"\n";
 	TH1DTracked result(Name,Title,NBins,Min,Max);
@@ -33,6 +37,66 @@ TH1DTracked CopyHistogramToTH1DTracked(TH1 *RefHistogram,double Min, double Max,
 		BinIterator++;
 	}
 	return result;
+}
+
+TH1DTracked* CopyHistogramToTH1DTracked_p(TH1 *RefHistogram,double Min, double Max,TString Name,TString Title)
+{
+	double XMin=RefHistogram->GetXaxis()->GetXmin(), XMax=RefHistogram->GetXaxis()->GetXmax();
+	//диапазон гистограммы-2 диапазона фита
+	if(Min<XMin)
+	{
+		Min=XMin;
+	}
+	if(Max>XMax)
+	{
+		Max=XMax;
+	}
+	if(Min==Max)
+	{
+		Min=XMin;
+		Max=XMax;
+	}
+	
+	int NBins=ceil((Max-Min)/RefHistogram->GetBinWidth(1));
+	//cout<<"HistLeft HistRight "<<HistLeft<<" "<<HistRight<<" "<<NBins<<" "<<hist->GetBinWidth(1)<<"\n";
+	TH1DTracked *result=new TH1DTracked(Name,Title,NBins,Min,Max);
+	int BinMin=RefHistogram->GetXaxis()->FindBin(Min), BinMax=RefHistogram->GetXaxis()->FindBin(Max);
+	
+	//cout<<"BinMin BinMax "<<BinMin<<" "<<BinMax<<"\n";
+	
+	int BinIterator=1;
+	for(int i=BinMin;i<=BinMax;i++)
+	{
+		result->SetBinContent(BinIterator,RefHistogram->GetBinContent(i));
+		result->SetBinError(BinIterator,RefHistogram->GetBinError(i));
+		BinIterator++;
+	}
+	return result;
+}
+void TH1DTracked::GetInfoFromString(string str)
+{
+	vector<string> info=SplitStr(str,";");
+	if(info.size()>1)
+	{
+		stringstream sstr_tmp(info[1]);
+		string tmp;
+		sstr_tmp>>tmp>>ParentName;
+		if(info.size()>2)
+		{
+			Operations=SplitStr(info[2],"!");
+		}
+		
+	}
+}
+string TH1DTracked::ToString()
+{
+	stringstream sstr;
+	sstr<<"id: "<<GetName()<<";Parent: "<<ParentName<<";Operations:";
+	for(unsigned int i=0;i<Operations.size();i++)
+	{
+		sstr<<Operations[i]<<"!";
+	}
+	return sstr.str();
 }
 
 TH1D CopyHistogramToTH1D(TH1 *RefHistogram,double Min, double Max)
@@ -69,6 +133,31 @@ TH1D CopyHistogramToTH1D(TH1 *RefHistogram,double Min, double Max)
 	return result;
 }
 
+void FitManager::ReadParentData(string ParentData)
+{
+	/*vector<string> id_;
+	for(unsigned int i=0;i<FitRes.size();i++)
+	{
+		id_.push_back(FitRes[i].ReferenceHistogram.GetName());
+	}*/
+	stringstream sstr(ParentData);
+	string line;
+	while(getline(sstr,line))
+	{
+		for(unsigned int i=0;i<FitRes.size();i++)
+		{
+			vector<string> splitted=SplitStr(line,";");
+			if(splitted.size()>0)
+			{
+				if(splitted[0]==("id: "+string(FitRes[i]->ReferenceHistogram.GetName())))
+				{
+					FitRes[i]->ReferenceHistogram.GetInfoFromString(line);
+				}
+			}
+		}
+	}
+}
+
 void FitManager::SaveToROOT(TFile *f_out)
 {
 	for(unsigned int i=0;i<FitRes.size();i++)
@@ -76,6 +165,11 @@ void FitManager::SaveToROOT(TFile *f_out)
 		TH1D hist=CopyHistogramToTH1D(&(FitRes[i]->ReferenceHistogram));
 		f_out->WriteTObject(&hist);
 		f_out->WriteTObject(&(FitRes[i]->Fit->Function));
+		if(FitRes[i]->ReferenceHistogram.ParentHistogram)
+		{
+			TH1D hist_ref=CopyHistogramToTH1D((FitRes[i]->ReferenceHistogram.ParentHistogram));
+			f_out->WriteTObject(&hist_ref);
+		}
 	}
 	stringstream ofs;
 	ofs<<"id_list: ";
@@ -90,6 +184,15 @@ void FitManager::SaveToROOT(TFile *f_out)
 	}
 	string result=ofs.str();
 	f_out->WriteObject(&result,"FitFunctionsList");
+	
+	stringstream ofs_parent;
+	for(unsigned int i=0;i<FitRes.size();i++)
+	{
+		ofs_parent<<FitRes[i]->ReferenceHistogram.ToString()<<"\n";
+	}
+	string parent_result=ofs_parent.str();
+	f_out->WriteObject(&parent_result,"ParentList");
+	
 }
 
 void FitManager::SaveToROOT(string filename)
@@ -196,8 +299,13 @@ void FitManager::UpdateInROOT(TFile *f_out)
 	for(unsigned int i=0;i<FitRes.size();i++)
 	{
 		TH1D hist=CopyHistogramToTH1D(&(FitRes[i]->ReferenceHistogram));
-		f_out->WriteTObject(&hist,hist.GetName(),"overwrite");
-		f_out->WriteTObject(&(FitRes[i]->Fit->Function),FitRes[i]->Fit->Function.GetName(),"overwrite");
+		f_out->WriteTObject(&hist);
+		f_out->WriteTObject(&(FitRes[i]->Fit->Function));
+		if(FitRes[i]->ReferenceHistogram.ParentHistogram)
+		{
+			TH1D hist_ref=CopyHistogramToTH1D((FitRes[i]->ReferenceHistogram.ParentHistogram));
+			f_out->WriteTObject(&hist_ref);
+		}
 	}
 	stringstream ofs;
 	ofs<<"id_list: ";
@@ -212,6 +320,14 @@ void FitManager::UpdateInROOT(TFile *f_out)
 	}
 	string result=ofs.str();
 	f_out->WriteObject(&result,"FitFunctionsList","overwrite");
+	
+	stringstream ofs_parent;
+	for(unsigned int i=0;i<FitRes.size();i++)
+	{
+		ofs_parent<<FitRes[i]->ReferenceHistogram.ToString()<<"\n";
+	}
+	string parent_result=ofs_parent.str();
+	f_out->WriteObject(&parent_result,"ParentList","overwrite");
 }
 void FitManager::ReadFromROOT(TFile *f)
 {
@@ -220,9 +336,10 @@ void FitManager::ReadFromROOT(TFile *f)
 		cout<<"This is FitManager::ReadFromROOT: pointer to TFile is invalid. Returned;\n";
 		return;
 	}
+	file_for_work=f;
 	if(f->Get("FitFunctionsList"))
 	{
-		file_for_work=f;
+		
 		string FitList=*(f->Get<string>("FitFunctionsList"));
 		Clear();
 		stringstream ifs(FitList);
@@ -291,6 +408,23 @@ void FitManager::ReadFromROOT(TFile *f)
 			}
 		}
 	}
+	if(f->Get("ParentList"))
+	{
+		string ParentList=*(f->Get<string>("ParentList"));
+		ReadParentData(ParentList);
+		for(unsigned int i=0;i<FitRes.size();i++)
+		{
+			TString ParentName=FitRes[i]->ReferenceHistogram.ParentName;
+			TH1* ParHist=(TH1*)f->Get(ParentName);
+			if(ParHist)
+			{
+				TH1DTracked *hPar=CopyHistogramToTH1DTracked_p(ParHist,0,0,ParHist->GetName(),ParHist->GetTitle());
+				ParentHistograms.push_back(hPar);
+				FitRes[i]->ReferenceHistogram.ParentHistogram=hPar;
+			}
+		}
+	}
+	
 }
 
 void FitManager::PrintToPDF(string filename)
@@ -751,7 +885,7 @@ void TFitFunction::GetRange(double &Xmin,double &Xmax)
 {
 	Xmin=LeftBorder; Xmax=RightBorder;
 }
-void  TFitFunction::Fit(TH1 *h, bool KeepResults)
+void  TFitFunction::Fit(TH1 *h, bool KeepResults,TH1* Parent)
 {
 	SetParameters();
 	h->Fit(&Function,"R","",LeftBorder,RightBorder);
@@ -759,7 +893,40 @@ void  TFitFunction::Fit(TH1 *h, bool KeepResults)
 	if(KeepResults)
 	{
 		FitManager::GetPointer()->SaveFitRes(this,h);
+		if(Parent)
+		{
+			if(!fManager)
+			{
+				cout<<"This is TFitFunction::Fit(): pointer to fManager is invalid!\n";
+			}
+			bool ExsistedParent=false;
+			TH1 *ParentH=0;
+			for(unsigned int i=0;i<fManager->ParentHistograms.size();i++)
+			{
+				if(fManager->ParentHistograms[i]->ParentHistogram==Parent)
+				{
+					ExsistedParent=true;
+					ParentH=fManager->ParentHistograms[i];
+					break;
+				}
+			}
+			if(!ExsistedParent)
+			{
+				TH1DTracked *p=CopyHistogramToTH1DTracked_p(Parent,0,0,TString::Format("Parent_%d",fManager->ParentHistograms.size()),TString::Format("Parent_%d",fManager->ParentHistograms.size()));
+				p->ParentHistogram=Parent;
+				fFitResult->ReferenceHistogram.ParentHistogram=p;
+				fManager->ParentHistograms.push_back(p);
+				fFitResult->ReferenceHistogram.ParentName=p->GetName();
+			}
+			else
+			{
+				fFitResult->ReferenceHistogram.ParentHistogram=ParentH;
+				fFitResult->ReferenceHistogram.ParentName=ParentH->GetName();
+			}
+		}
 	}
+	
+	
 }
 void  TFitFunction::AssignPointers()
 {

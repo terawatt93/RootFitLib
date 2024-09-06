@@ -48,19 +48,128 @@ FitButtonFrame::FitButtonFrame(TGFrame *fFrame,RootFitLib_gui *Main): TGHorizont
 	Update = new TGTextButton(this,"Update");
 	Fit = new TGTextButton(this,"Fit");
 	SaveToFile = new TGTextButton(this,"Save to file");
-	Next = new TGTextButton(this,"Next fit");
-	Prev = new TGTextButton(this,"Prev fit");
+	Next = new TGTextButton(this,"Next fit>>");
+	Prev = new TGTextButton(this,"<<Prev fit");
 	Find = new TGTextButton(this,"Find function");
+	FunctionNameField=new TGTextEntry(this);
+	FunctionNameField->SetDefaultSize(250,20);
 	
 	
-	AddFrame(Update, new TGLayoutHints(kLHintsCenterX|kLHintsCenterY,20, 20, 20, 20));
-	AddFrame(Fit, new TGLayoutHints(kLHintsCenterX|kLHintsCenterY,20, 20, 20, 20));
-	AddFrame(SaveToFile, new TGLayoutHints(kLHintsCenterX|kLHintsCenterY,20, 20, 20, 20));
+	AddFrame(Update, new TGLayoutHints(kLHintsCenterX|kLHintsCenterY,2, 2, 2, 2));
+	AddFrame(Fit, new TGLayoutHints(kLHintsCenterX|kLHintsCenterY,2, 2, 2, 2));
+	
+	AddFrame(Prev, new TGLayoutHints(kLHintsCenterX|kLHintsCenterY,2, 2, 2, 2));
+	AddFrame(Next, new TGLayoutHints(kLHintsCenterX|kLHintsCenterY,2, 2, 2, 2));
+	AddFrame(FunctionNameField, new TGLayoutHints(kLHintsCenterX|kLHintsCenterY,2, 2, 2, 2));
+	AddFrame(Find, new TGLayoutHints(kLHintsCenterX|kLHintsCenterY,2, 2, 2, 2));
+	
+	
+	AddFrame(SaveToFile, new TGLayoutHints(kLHintsCenterX|kLHintsCenterY,2, 2, 2, 2));
+	
+	
 	fMainFrame=Main;
 	Update->Connect("Clicked()","FitButtonFrame", this, "FUpdate()");
 	Fit->Connect("Clicked()","FitButtonFrame", this, "FFit()");
 	SaveToFile->Connect("Clicked()","FitButtonFrame", this, "FSaveToFile()");
+	
+	Prev->Connect("Clicked()","FitButtonFrame", this, "FPrev()");
+	Next->Connect("Clicked()","FitButtonFrame", this, "FNext()");
+	Find->Connect("Clicked()","FitButtonFrame", this, "FFind()");
 }
+
+void FitButtonFrame::FPrev()
+{
+	if(!(fMainFrame->fFitFcn))
+	{
+		cout<<"This is FitButtonFrame::FPrev():: fitfunction does not set. Returned\n";
+		return;
+	}
+	if(!(fMainFrame->fFitFcn->fManager))
+	{
+		cout<<"This is FitButtonFrame::FPrev()::pointer to fManager is invalid. Returned\n";
+		return;
+	}
+	vector<TFitFunction*> FNC=fMainFrame->fFitFcn->fManager->Functions;
+	int Num=-1;
+	for(unsigned int i=0;i<FNC.size();i++)
+	{
+		if(FNC[i]==fMainFrame->fFitFcn)
+		{
+			Num=i;
+			if(i>0)
+			{
+				Num--;
+			}
+			break;
+		}
+	}
+	if(Num>-1)
+	{
+		gApplication->Terminate(0);
+		FNC[Num]->LaunchGUI();
+		//fMainFrame->Cleanup();
+		//fMainFrame->fFitFcn=FNC[Num];
+		//FUpdate();
+	}
+}
+void FitButtonFrame::FNext()
+{
+	if(!(fMainFrame->fFitFcn))
+	{
+		cout<<"This is FitButtonFrame::FNext():: fitfunction does not set. Returned\n";
+		return;
+	}
+	if(!(fMainFrame->fFitFcn->fManager))
+	{
+		cout<<"This is FitButtonFrame::FNext()::pointer to fManager is invalid. Returned\n";
+		return;
+	}
+	vector<TFitFunction*> FNC=fMainFrame->fFitFcn->fManager->Functions;
+	int Num=-1;
+	for(unsigned int i=0;i<FNC.size();i++)
+	{
+		if(FNC[i]==fMainFrame->fFitFcn)
+		{
+			Num=i+1;
+			break;
+		}
+	}
+	if(Num>-1)
+	{
+		//fMainFrame->fFitFcn=FNC[Num];
+		//FUpdate();
+		gApplication->Terminate(0);
+		FNC[Num]->LaunchGUI();
+		//fMainFrame->Cleanup();
+	}
+}
+void FitButtonFrame::FFind()
+{
+	TString fName=FunctionNameField->GetText();
+	if(!(fMainFrame->fFitFcn))
+	{
+		cout<<"This is FitButtonFrame::FFind():: fitfunction does not set. Returned\n";
+		return;
+	}
+	if(!(fMainFrame->fFitFcn->fManager))
+	{
+		cout<<"This is FitButtonFrame::FFind()::pointer to fManager is invalid. Returned\n";
+		return;
+	}
+	TFitFunction *f=fMainFrame->fFitFcn->fManager->FindFunction(fName.Data());
+	if(!f)
+	{
+		cout<<"This is FitButtonFrame::FFind()::Function with name "<<fName<<" not found . Returned\n";
+		return;
+	}
+	gApplication->Terminate(0);
+	f->LaunchGUI();
+	//fMainFrame->Cleanup();
+	
+	//fMainFrame->fFitFcn=f;
+	//FUpdate();
+}
+
 void FitButtonFrame::FUpdate()
 {
 	TFitFunction *func=fMainFrame->fFitFcn;

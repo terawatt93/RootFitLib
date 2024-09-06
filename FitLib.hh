@@ -37,6 +37,7 @@
 #include "TGButton.h"
 #include "TGFrame.h"
 #include "TLine.h"
+#include "TApplication.h"
 #pragma once
 
 class FitParFrame;
@@ -59,10 +60,13 @@ class TH1DTracked:public TH1D//класс, сохраняющий операци
 	TH1DTracked(const char *name,const char *title,Int_t nbinsx,const Double_t *xbins):TH1D(name,title,nbinsx,xbins) { }
 	
 	TH1 *ParentHistogram;//!
+	TString ParentName;
 	vector<string> Operations;
-	virtual TH1 * 	Rebin (Int_t ngroup=2, const char *newname="", const Double_t *xbins=nullptr);
-	virtual void 	Smooth (Int_t ntimes=1, Option_t *option="");
-	virtual void 	Scale (Double_t c1=1, Option_t *option="");
+	virtual TH1 * 	Rebin (Int_t ngroup=2, const char *newname="", const Double_t *xbins=nullptr);// *MENU*
+	virtual void 	Smooth (Int_t ntimes=1, Option_t *option="");// *MENU*
+	virtual void 	Scale (Double_t c1=1, Option_t *option="");// *MENU*
+	string ToString();
+	void GetInfoFromString(string str);
 	void ApplyOperations();
 	ClassDef(TH1DTracked,1)
 };
@@ -70,6 +74,7 @@ class TH1DTracked:public TH1D//класс, сохраняющий операци
 TH1D CopyHistogramToTH1D(TH1 *RefHistogram,double Min=0, double Max=0);
 
 TH1DTracked CopyHistogramToTH1DTracked(TH1 *RefHistogram,double Min, double Max,TString Name,TString Title);
+TH1DTracked* CopyHistogramToTH1DTracked_p(TH1 *RefHistogram,double Min, double Max,TString Name,TString Title);//возвращает указатель
 
 
 class FitManager:public TObject
@@ -83,7 +88,7 @@ class FitManager:public TObject
 
 	vector<FitResult*> FitRes;
 	vector<TFitFunction*> Functions;
-	vector<TH1D*> ParentHistograms;
+	vector<TH1DTracked*> ParentHistograms;
 
 	TFitFunction* BookFunction(string InputStr,bool AddNew=false);
 	TFitFunction* BookFunction(TString Name,TString Function,double XMin,double XMax,bool AddNew=false);
@@ -96,12 +101,13 @@ class FitManager:public TObject
 	
 	void ReadFromROOT(TFile *f);
 	void UpdateInROOT(TFile *f);
-	
+	void ReadParentData(string ParentData);//
 	void PrintToPDF(string filename="");
 	void SaveToROOT(string filename="");
 	void SaveToROOT(TFile *f);
 	int GetPageNumberInPDF(TFitFunction *function);
 	int GetPageNumberInPDF(string ID);
+	//void AddParentHistogram(TH1* histogram);
 	bool MultiplyToChi2=true;
 	private:
 	FitManager() { }  // конструктор недоступен
@@ -187,7 +193,7 @@ class TFitFunction:public TObject
 	
 	//void FromString(TString input);
 	TF1 *GetFunction();
-	void Fit(TH1 *h, bool KeepResults=true);
+	void Fit(TH1 *h, bool KeepResults=true,TH1* Parent=0);
 	void AssignPointers();
 	void GenerateTLegendWithResults(TLegend* p);
 	int GetNpar();
@@ -210,6 +216,9 @@ class FitButtonFrame : public TGHorizontalFrame //полоса с кнопкам
 	void FUpdate();
 	void FFit();
 	void FSaveToFile();
+	void FNext();
+	void FPrev();
+	void FFind();
 	ClassDef(FitButtonFrame,1)
 };
 
