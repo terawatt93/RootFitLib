@@ -99,6 +99,55 @@ string TH1DTracked::ToString()
 	return sstr.str();
 }
 
+void TH1DTracked::ApplyOperations()
+{
+	for(unsigned int i=0;i<Operations.size();i++)
+	{
+		stringstream sstr(Operations[i]);
+		string command;
+		double argument;
+		sstr>>command>>argument;
+		if(command=="Rebin")
+		{
+			Rebin(int(argument));
+		}
+		if(command=="Smooth")
+		{
+			Smooth(int(argument));
+		}
+		if(command=="Scale")
+		{
+			Scale(argument);
+		}
+	}
+}
+
+void TH1DTracked::Extend(Double_t xmin,Double_t xmax)
+{
+	double XMin=GetXaxis()->GetXmin(), XMax=GetXaxis()->GetXmax();//текущие пределы
+	int Integr=Integral();
+	double BinWidth=GetBinWidth();
+	if(!ParentHistogram)
+	{
+		cout<<"This is TH1DTracked::Extend(Double_t xmin,Double_t xmax): cannot extend histogram because pointer to Parent is invalid!\n";
+		return;
+	}
+	if(xmin==xmax)
+	{
+		xmin=XMin;
+		xmax=XMax;
+	}
+	if(xmin<XMin)
+	{
+		xmin=XMin;
+	}
+	if(xmax>XMax)
+	{
+		xmax=XMax;
+	}
+	
+}
+
 TH1D CopyHistogramToTH1D(TH1 *RefHistogram,double Min, double Max)
 {
 	double XMin=RefHistogram->GetXaxis()->GetXmin(), XMax=RefHistogram->GetXaxis()->GetXmax();

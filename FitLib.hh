@@ -65,6 +65,7 @@ class TH1DTracked:public TH1D//класс, сохраняющий операци
 	virtual TH1 * 	Rebin (Int_t ngroup=2, const char *newname="", const Double_t *xbins=nullptr);// *MENU*
 	virtual void 	Smooth (Int_t ntimes=1, Option_t *option="");// *MENU*
 	virtual void 	Scale (Double_t c1=1, Option_t *option="");// *MENU*
+	void Extend(Double_t xmin,Double_t xmax);// *MENU*
 	string ToString();
 	void GetInfoFromString(string str);
 	void ApplyOperations();
