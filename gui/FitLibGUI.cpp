@@ -210,7 +210,7 @@ void FitButtonFrame::FFit()
 		return;
 	}
 	//cout<<"integral:"<<fMainFrame->fFitFcn->fFitResult->ReferenceHistogram.Integral();
-	fMainFrame->fFitFcn->Fit(&(fMainFrame->fFitFcn->fFitResult->ReferenceHistogram));
+	fMainFrame->fFitFcn->Fit(&(fMainFrame->fFitFcn->fFitResult->ReferenceHistogram),true,fMainFrame->fFitFcn->fFitResult->ReferenceHistogram.ParentHistogram);
 	fMainFrame->fFitFcn->fFitResult->ReferenceHistogram.Draw("e hist");
 	fMainFrame->fFitFcn->Function.Draw("same");
 	gPad->Update();
@@ -572,14 +572,123 @@ FunctionStringFrame::FunctionStringFrame(TGFrame *fFrame,RootFitLib_gui *Main_) 
 	LeftLimit=new TGNumberEntry(this,0,9);
 	RightLimit=new TGNumberEntry(this,0,9);
 	Update=new TGTextButton(this,"Update");
+	
+	Left=new TGTextButton(this,"LeftLimit");
+	Right=new TGTextButton(this,"RightLimit");
+	
 	AddFrame(FuncName,new TGLayoutHints(kLHintsLeft|kLHintsTop, 0));
 	AddFrame(FuncField,new TGLayoutHints(kLHintsLeft|kLHintsTop, 0));
+	AddFrame(Left,new TGLayoutHints(kLHintsLeft|kLHintsTop, 0));
 	AddFrame(LeftLimit,new TGLayoutHints(kLHintsLeft|kLHintsTop, 0));
+	AddFrame(Right,new TGLayoutHints(kLHintsLeft|kLHintsTop, 0));
 	AddFrame(RightLimit,new TGLayoutHints(kLHintsLeft|kLHintsTop, 0));
 	AddFrame(Update,new TGLayoutHints(kLHintsLeft|kLHintsTop, 0));
 	Main=Main_;
 	Update->Connect("Clicked()","FunctionStringFrame", this, "UpdateFitFunction()");
+	Left->Connect("Clicked()","FunctionStringFrame", this, "ClkLeft()");
+	Right->Connect("Clicked()","FunctionStringFrame", this, "ClkRight()");
+	
 }
+
+void FunctionStringFrame::ClkLeft()
+{
+	Stage=0;
+	cout<<"clkleft\n";
+	Main->ActiveWidget=this;
+	UpdateFitFunction();
+}
+void FunctionStringFrame::ClkRight()
+{
+	Stage=1;
+	cout<<"clkright\n";
+	Main->ActiveWidget=this;
+	UpdateFitFunction();
+}
+
+void FunctionStringFrame::ProcessCanvasFunction(int event,int x,int y, TObject *selected,TCanvas *c)
+{
+	//cout<<ParName->GetString()<<" "<<event<<" "<<c->AbsPixeltoX(x)<<" "<<c->AbsPixeltoY(y)<<"\n";
+	TH1D *h=0;
+	if(!Main)
+	{
+		cout<<"This is FunctionStringFrame::ProcessCanvasFunction(): pointer to MainFrame is invalid!\n";
+		return;
+	}
+	if(!Main->fFitFcn)
+	{
+		cout<<"This is FunctionStringFrame::ProcessCanvasFunction(): pointer to FitFcn is invalid!\n";
+		return;
+	}
+	if(Main->fFitFcn->fFitResult)
+	{
+		h=&(Main->fFitFcn->fFitResult->ReferenceHistogram);
+	}
+	
+	double MinX=0,MaxX=0,MinY=0,MaxY=0;
+	GetRangeAxis(MinX,MinY,MaxX,MaxY);
+	if(Stage==0)
+	{
+		TLine l;
+		l.SetLineColor(2);
+		if(LeftBorder)
+		{
+			delete LeftBorder;
+			LeftBorder=0;
+		}
+		LeftBorder=l.DrawLine(GetXCoordinate(x),MinY, GetXCoordinate(x),MaxY);
+		//Centroid->SetBit(kCanDelete,false);
+		c->Modified();
+		c->Update();
+		LeftLimit->SetNumber(c->AbsPixeltoX(x));
+		if(event==11)//клик
+		{
+			LeftLimit->SetNumber(c->AbsPixeltoX(x));
+			if(LeftBorder)
+			{
+				delete LeftBorder;
+				LeftBorder=0;
+			}
+			UpdateFitFunction();
+			c->Modified();
+			c->Update();
+			Main->ActiveWidget=0;
+			return;
+		}
+	}
+	if(Stage==1)
+	{
+		TLine l;
+		l.SetLineColor(4);
+		if(RightBorder)
+		{
+			delete RightBorder;
+			RightBorder=0;
+		}
+		RightBorder=l.DrawLine(GetXCoordinate(x),MinY, GetXCoordinate(x),MaxY);
+		//Centroid->SetBit(kCanDelete,false);
+		c->Modified();
+		c->Update();
+		RightLimit->SetNumber(c->AbsPixeltoX(x));
+		
+		if(event==11)//клик
+		{
+			if(RightBorder)
+			{
+				delete RightBorder;
+				RightBorder=0;
+			}
+			RightLimit->SetNumber(c->AbsPixeltoX(x));
+			UpdateFitFunction();
+			c->Modified();
+			c->Update();
+			Stage=0;
+			Main->ActiveWidget=0;
+			return;
+		}
+	}
+	return;
+}
+
 void FunctionStringFrame::UpdateValuesFromFitFunction(TFitFunction *func)
 {
 	FuncName->SetText(func->id.c_str());
@@ -590,12 +699,27 @@ void FunctionStringFrame::UpdateValuesFromFitFunction(TFitFunction *func)
 void FunctionStringFrame::UpdateFitFunction()
 {
 	TString func_str(FuncField->GetText());
+	
+	double XMin=Main->fFitFcn->LeftBorder;
+	double XMax=Main->fFitFcn->RightBorder;
+	
+	
+	double NewXMin=LeftLimit->GetNumber();
+	double NewXMax=RightLimit->GetNumber();
+	
 	if(Main->fFitFcn)
 	{
 		Main->fFitFcn->SetFunction(TString((Main->fFitFcn->id).c_str()),func_str,LeftLimit->GetNumber(),RightLimit->GetNumber());
 	}
+	if((NewXMin!=XMin)||(NewXMax!=XMax))
+	{
+		Main->fFitFcn->fFitResult->ExtendHistogram(NewXMin,NewXMax);
+	}
+	
+	
 	/*Main->fVframe1->RemoveAll();
 	Main->AnalyseFitFunctionAndCreatePanels(Main->fFitFcn);*/
+	
 	Main->fCanvas->GetCanvas()->cd();
 	Main->fFitFcn->SetParameters();
 	if(Main->fFitFcn->fFitResult)
@@ -737,6 +861,10 @@ void RootFitLib_gui::DoCanvas(Int_t event, Int_t x, Int_t y, TObject *selected)
 		if(ActiveWidget->InheritsFrom("FitParFrame"))
 		{
 			((FitParFrame*)ActiveWidget)->ProcessCanvasFunction(event,x,y,selected,c);
+		}
+		if(ActiveWidget->InheritsFrom("FunctionStringFrame"))
+		{
+			((FunctionStringFrame*)ActiveWidget)->ProcessCanvasFunction(event,x,y,selected,c);
 		}
 	}
 	

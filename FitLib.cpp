@@ -107,22 +107,26 @@ void TH1DTracked::ApplyOperations()
 		string command;
 		double argument;
 		sstr>>command>>argument;
+		//cout<<"command: "<<command<<" "<<argument<<" "<<i<<"\n";
 		if(command=="Rebin")
 		{
-			Rebin(int(argument));
+			if(argument>1)
+			TH1::Rebin(int(argument));
 		}
 		if(command=="Smooth")
 		{
-			Smooth(int(argument));
+			if(argument>1)
+			TH1::Smooth(int(argument));
 		}
 		if(command=="Scale")
 		{
-			Scale(argument);
+			if(argument>1)
+			TH1::Scale(argument);
 		}
 	}
 }
 
-void TH1DTracked::Extend(Double_t xmin,Double_t xmax)
+/*void TH1DTracked::Extend(Double_t xmin,Double_t xmax)
 {
 	double XMin=GetXaxis()->GetXmin(), XMax=GetXaxis()->GetXmax();//текущие пределы
 	int Integr=Integral();
@@ -146,7 +150,7 @@ void TH1DTracked::Extend(Double_t xmin,Double_t xmax)
 		xmax=XMax;
 	}
 	
-}
+}*/
 
 TH1D CopyHistogramToTH1D(TH1 *RefHistogram,double Min, double Max)
 {
@@ -180,6 +184,54 @@ TH1D CopyHistogramToTH1D(TH1 *RefHistogram,double Min, double Max)
 		BinIterator++;
 	}
 	return result;
+}
+
+void FitResult::ExtendHistogram(double xmin, double xmax)
+{
+	cout<<"xmin "<<xmin<<" xmax "<<xmax<<"\n";
+	double BinWidth=ReferenceHistogram.GetBinWidth(1);
+	if(!ReferenceHistogram.ParentHistogram)
+	{
+		cout<<"This is FitResult::ExtendHistogram(Double_t xmin,Double_t xmax): cannot extend histogram because pointer to Parent is invalid!\n";
+		return;
+	}
+	cout<<"1\n";
+	
+	double XMin=ReferenceHistogram.ParentHistogram->GetXaxis()->GetXmin(), XMax=ReferenceHistogram.ParentHistogram->GetXaxis()->GetXmax();//текущие пределы
+	//int Integr=ReferenceHistogram.Integral();
+	cout<<"2\n";
+	if(xmin==xmax)
+	{
+		xmin=XMin;
+		xmax=XMax;
+	}
+	if(xmin<XMin)
+	{
+		xmin=XMin;
+	}
+	if(xmax>XMax)
+	{
+		xmax=XMax;
+	}
+	cout<<"3\n";
+	//double PrevBinWidth=ReferenceHistogram.GetBinWidth(1);
+	
+	vector<string> Operations=ReferenceHistogram.Operations;
+	cout<<"4\n";
+	TH1* Parent=ReferenceHistogram.ParentHistogram;
+	cout<<"5\n";
+	ReferenceHistogram=CopyHistogramToTH1DTracked(ReferenceHistogram.ParentHistogram,xmin,xmax,ReferenceHistogram.GetName(),ReferenceHistogram.GetTitle());
+	cout<<"6\n";
+	ReferenceHistogram.ParentHistogram=Parent;
+	cout<<"7\n";
+	ReferenceHistogram.Operations=Operations;
+	cout<<"8\n";
+	ReferenceHistogram.ApplyOperations();
+	cout<<"9\n";
+	double Rebin=ceil(int(BinWidth/ReferenceHistogram.GetBinWidth(1)*10)/10);
+	cout<<"Rebin:"<<Rebin<<" "<<BinWidth/ReferenceHistogram.GetBinWidth(1)<<"\n";
+	ReferenceHistogram.Rebin(Rebin);
+	cout<<"10\n";
 }
 
 void FitManager::ReadParentData(string ParentData)
@@ -479,7 +531,7 @@ void FitManager::ReadFromROOT(TFile *f)
 void FitManager::PrintToPDF(string filename)
 {
 	TCanvas *c=0;
-	bool CreatedCanvas=false;
+	//bool CreatedCanvas=false;
 	gStyle->SetOptStat(0);
 	gStyle->SetOptFit(11111);
 	/*if(gPad)
@@ -839,7 +891,7 @@ void TFitFunction::SetParameters()
 
 void TFitFunction::SetParameter(int ParNumber,double Value)
 {
-	if(parameters.size()>ParNumber)
+	if((int)parameters.size()>ParNumber)
 	{
 		parameters[ParNumber].Value=Value;
 	}
@@ -847,7 +899,7 @@ void TFitFunction::SetParameter(int ParNumber,double Value)
 }
 void TFitFunction::FixParameter(int ParNumber,double Value)
 {
-	if(parameters.size()>ParNumber)
+	if((int)parameters.size()>ParNumber)
 	{
 		parameters[ParNumber].Value=Value;
 		parameters[ParNumber].Fixed=true;
@@ -857,7 +909,7 @@ void TFitFunction::FixParameter(int ParNumber,double Value)
 }
 void TFitFunction::SetParLimits(int ParNumber,double ValueMin,double ValueMax)
 {
-	if(parameters.size()>ParNumber)
+	if((int)parameters.size()>ParNumber)
 	{
 		parameters[ParNumber].MinLimit=ValueMin;
 		parameters[ParNumber].MaxLimit=ValueMax;
@@ -869,7 +921,7 @@ void TFitFunction::SetParLimits(int ParNumber,double ValueMin,double ValueMax)
 
 void TFitFunction::ReleaseParameter(int ParNumber)
 {
-	if(parameters.size()>ParNumber)
+	if((int)parameters.size()>ParNumber)
 	{
 		parameters[ParNumber].Limited=false;
 		parameters[ParNumber].Fixed=false;
@@ -879,7 +931,7 @@ void TFitFunction::ReleaseParameter(int ParNumber)
 
 void TFitFunction::GetParameters()
 {
-	if(Function.GetNpar()>parameters.size())
+	if(Function.GetNpar()>(int)parameters.size())
 	{
 		parameters.resize(Function.GetNpar());
 	}
@@ -961,7 +1013,7 @@ void  TFitFunction::Fit(TH1 *h, bool KeepResults,TH1* Parent)
 			}
 			if(!ExsistedParent)
 			{
-				TH1DTracked *p=CopyHistogramToTH1DTracked_p(Parent,0,0,TString::Format("Parent_%d",fManager->ParentHistograms.size()),TString::Format("Parent_%d",fManager->ParentHistograms.size()));
+				TH1DTracked *p=CopyHistogramToTH1DTracked_p(Parent,0,0,TString::Format("Parent_%d",(int)fManager->ParentHistograms.size()),TString::Format("Parent_%d",(int)fManager->ParentHistograms.size()));
 				p->ParentHistogram=Parent;
 				fFitResult->ReferenceHistogram.ParentHistogram=p;
 				fManager->ParentHistograms.push_back(p);
@@ -987,7 +1039,7 @@ void  TFitFunction::AssignPointers()
 
 void  TFitFunction::SetParName(int ParNumber,TString Name)
 {
-	if(ParNumber<parameters.size())
+	if(ParNumber<(int)parameters.size())
 	{
 		parameters[ParNumber].ParName=Name;
 	}
@@ -997,14 +1049,10 @@ void  TFitFunction::SetParName(int ParNumber,TString Name)
 	}
 }
 
-TH1DTracked ToTrackedHistogram(TH1 *h)
-{
-	
-}
 
 TString TFitFunction::GetParName(int ParNumber)
 {
-	if(ParNumber<parameters.size())
+	if(ParNumber<(int)parameters.size())
 	{
 		return parameters[ParNumber].ParName;
 	}
@@ -1213,7 +1261,7 @@ void TFitFunction::FromString(string input)
 		sstr>>par.Value>>par.MinLimit>>par.MaxLimit;
 		par.fFunction=this;
 		parameters.push_back(par);
-		if(parameters.size()>par.ParNumber)
+		if((int)parameters.size()>par.ParNumber)
 		{
 			parameters[par.ParNumber]=par;
 		}
@@ -1228,6 +1276,7 @@ void TFitFunction::FromString(string input)
 
 void TFitFunction::LaunchGUI()
 {
+	TH1::AddDirectory(false);
 	new RootFitLib_gui(id,fManager);
 }
 
@@ -1288,7 +1337,7 @@ void TFitFunctionComponent::FromString(string input)
 			sstr>>par.ParNumber;
 			sstr>>par.Value>>par.MinLimit>>par.MaxLimit;
 			par.fFunction=fFunction;
-			if(fFunction->parameters.size()>par.ParNumber)
+			if((int)fFunction->parameters.size()>par.ParNumber)
 			{
 				fFunction->parameters[par.ParNumber]=par;
 			}

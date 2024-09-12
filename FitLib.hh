@@ -65,7 +65,7 @@ class TH1DTracked:public TH1D//класс, сохраняющий операци
 	virtual TH1 * 	Rebin (Int_t ngroup=2, const char *newname="", const Double_t *xbins=nullptr);// *MENU*
 	virtual void 	Smooth (Int_t ntimes=1, Option_t *option="");// *MENU*
 	virtual void 	Scale (Double_t c1=1, Option_t *option="");// *MENU*
-	void Extend(Double_t xmin,Double_t xmax);// *MENU*
+	//void Extend(Double_t xmin,Double_t xmax);// *MENU*
 	string ToString();
 	void GetInfoFromString(string str);
 	void ApplyOperations();
@@ -128,6 +128,7 @@ class FitResult:public TObject
 	TString RefHistogramName;
 	//TH1D ReferenceHistogram;
 	TH1DTracked ReferenceHistogram;
+	void ExtendHistogram(double xmin, double xmax);
 };
 
 
@@ -250,11 +251,16 @@ class FunctionStringFrame : public TGHorizontalFrame
 	TGLabel *FuncName;
 	TGTextEntry *FuncField;
 	TGNumberEntry *LeftLimit, *RightLimit;
-	TGTextButton *Update;
+	TGTextButton *Update, *Left,*Right;
 	RootFitLib_gui *Main=0;//указатель на главное окно
 	FunctionStringFrame(TGFrame *fFrame,RootFitLib_gui *Main_);
 	void UpdateFitFunction();
 	void UpdateValuesFromFitFunction(TFitFunction *func);
+	void ClkLeft();
+	void ClkRight();
+	int Stage=0;
+	void ProcessCanvasFunction(int event,int x,int y, TObject *selected,TCanvas *c);
+	TLine *LeftBorder=0, *RightBorder=0;
 	ClassDef(FunctionStringFrame,1)
 };
 
