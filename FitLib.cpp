@@ -154,6 +154,10 @@ void TH1DTracked::ApplyOperations()
 
 TH1D CopyHistogramToTH1D(TH1 *RefHistogram,double Min, double Max)
 {
+	if(!RefHistogram)
+	{
+		return TH1D;
+	}
 	double XMin=RefHistogram->GetXaxis()->GetXmin(), XMax=RefHistogram->GetXaxis()->GetXmax();
 	if(Min==Max)
 	{
