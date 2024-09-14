@@ -154,9 +154,9 @@ void TH1DTracked::ApplyOperations()
 
 TH1D CopyHistogramToTH1D(TH1 *RefHistogram,double Min, double Max)
 {
-	if(!RefHistogram)
+	if((!RefHistogram)||(RefHistogram->GetNbinsX()<=1))
 	{
-		return TH1D;
+		return TH1D();
 	}
 	double XMin=RefHistogram->GetXaxis()->GetXmin(), XMax=RefHistogram->GetXaxis()->GetXmax();
 	if(Min==Max)
@@ -270,11 +270,18 @@ void FitManager::SaveToROOT(TFile *f_out)
 		TH1D hist=CopyHistogramToTH1D(&(FitRes[i]->ReferenceHistogram));
 		f_out->WriteTObject(&hist);
 		f_out->WriteTObject(&(FitRes[i]->Fit->Function));
+		/*cout<<"FitManager::SaveToROOT::"<<FitRes[i]->ReferenceHistogram.GetName()<<"\n";
 		if(FitRes[i]->ReferenceHistogram.ParentHistogram)
 		{
+			cout<<"FitManager::SaveToROOT::parent:"<<FitRes[i]->ReferenceHistogram.GetName()<<"\n";
 			TH1D hist_ref=CopyHistogramToTH1D((FitRes[i]->ReferenceHistogram.ParentHistogram));
 			f_out->WriteTObject(&hist_ref);
-		}
+		}*/
+	}
+	for(unsigned int i=0;i<ParentHistograms.size();i++)
+	{
+		TH1D hist_ref=CopyHistogramToTH1D(ParentHistograms[i]);
+		f_out->WriteTObject(&hist_ref);
 	}
 	stringstream ofs;
 	ofs<<"id_list: ";
@@ -966,6 +973,7 @@ string TFitFunction::AsString(int PageNo)
 {
 
 	string result;
+	cout<<"111111: "<<id.c_str()<<" "<<func_str.c_str()<<"\n";
 	if(PageNo==0)
 	{
 		result=string(TString::Format("%s func: %s %f %f\n",id.c_str(),func_str.c_str(),LeftBorder,RightBorder).Data());
@@ -974,9 +982,10 @@ string TFitFunction::AsString(int PageNo)
 	{
 		result=string(TString::Format("%s func: %s %f %f %d\n",id.c_str(),func_str.c_str(),LeftBorder,RightBorder,PageNo).Data());
 	}
-	
+	cout<<"parameters.size: "<<parameters.size()<<"\n";
 	for(unsigned int i=0;i<parameters.size();i++)
 	{
+		parameters[i].fFunction=this;
 		result+=parameters[i].AsString()+"\n";
 	}
 	return result;
