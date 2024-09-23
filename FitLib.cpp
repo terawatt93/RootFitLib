@@ -1249,6 +1249,18 @@ void TFitFunction::GenerateTLegendWithResults(TLegend* p)
 	}
 }
 
+TF1Parameter* TFitFunction::FindParameter(TString Name)
+{
+	for(unsigned int i=0;i<parameters.size();i++)
+	{
+		if(parameters[i].ParName==Name)
+		{
+			return &parameters[i];
+		}
+	}
+	return 0;
+}
+
 void TFitFunction::FromString(string input)
 {
 	vector<string> strings=SplitStr(input,";");

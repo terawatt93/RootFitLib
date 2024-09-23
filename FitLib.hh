@@ -183,6 +183,8 @@ class TFitFunction:public TObject
 	double GetParError(TString Name);
 	void FromString(string input);
 	
+	TF1Parameter* FindParameter(TString Name);
+	
 	void FromStringObject(string input);//копия ReadFromTXTFile, но из строки 
 
 	void SetParameter(int ParNumber,double Value);
