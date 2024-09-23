@@ -178,7 +178,9 @@ class TFitFunction:public TObject
 	TString GetParName(int ParNumber);
 	void SetFunction(TString Name,TString FunctionStr,double XMin,double XMax);
 	double GetParameter(int number);
+	double GetParameter(TString Name);
 	double GetParError(int number);
+	double GetParError(TString Name);
 	void FromString(string input);
 	
 	void FromStringObject(string input);//копия ReadFromTXTFile, но из строки 

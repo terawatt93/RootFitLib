@@ -154,7 +154,11 @@ void TH1DTracked::ApplyOperations()
 
 TH1D CopyHistogramToTH1D(TH1 *RefHistogram,double Min, double Max)
 {
-	if((!RefHistogram)||(RefHistogram->GetNbinsX()<=1))
+	if((!RefHistogram))
+	{
+		return TH1D();
+	}
+	if(RefHistogram->GetNbinsX()<=1)
 	{
 		return TH1D();
 	}
@@ -410,6 +414,7 @@ void FitManager::UpdateInROOT(TFile *f_out)
 	f_out->ReOpen("update");
 	for(unsigned int i=0;i<FitRes.size();i++)
 	{
+		cout<<"FitRes: "<<FitRes[i]->Fit->id<<"\n";
 		TH1D hist=CopyHistogramToTH1D(&(FitRes[i]->ReferenceHistogram));
 		f_out->WriteTObject(&hist);
 		f_out->WriteTObject(&(FitRes[i]->Fit->Function));
@@ -1090,6 +1095,32 @@ double TFitFunction::GetParError(int number)
 	{
 		return parameters[number].Error;	
 	}
+	return nan("NAN");
+}
+double TFitFunction::GetParameter(TString Name)
+{
+	for(unsigned int i=0;i<parameters.size();i++)
+	{
+		if(parameters[i].ParName==Name)
+		{
+			return parameters[i].Value;
+		}
+	}
+	
+	cout<<"Parameter with Name \""<<Name<<"\" not found. NAN returned";
+	return nan("NAN");
+}
+double TFitFunction::GetParError(TString Name)
+{
+	for(unsigned int i=0;i<parameters.size();i++)
+	{
+		if(parameters[i].ParName==Name)
+		{
+			return parameters[i].Error;
+		}
+	}
+	
+	cout<<"Parameter with Name \""<<Name<<"\" not found. NAN returned";
 	return nan("NAN");
 }
 
