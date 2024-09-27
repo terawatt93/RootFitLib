@@ -269,6 +269,16 @@ void FitManager::ReadParentData(string ParentData)
 
 void FitManager::SaveToROOT(TFile *f_out)
 {
+	if(!f_out)
+	{
+		f_out=file_for_work;
+	}
+	if(!file_for_work)
+	{
+		cout<<"This is FitManager::SaveToROOT(TFile *f_out): both pointers (f_out) и file_for_work are invalid! Returned\n";
+		return;
+	}
+	f_out->ReOpen("recreate");
 	for(unsigned int i=0;i<FitRes.size();i++)
 	{
 		TH1D hist=CopyHistogramToTH1D(&(FitRes[i]->ReferenceHistogram));
@@ -313,6 +323,7 @@ void FitManager::SaveToROOT(TFile *f_out)
 
 void FitManager::SaveToROOT(string filename)
 {
+	
 	TFile f_out(filename.c_str(),"recreate");
 	SaveToROOT(&f_out);
 	f_out.Close();
@@ -416,8 +427,8 @@ void FitManager::UpdateInROOT(TFile *f_out)
 	{
 		cout<<"FitRes: "<<FitRes[i]->Fit->id<<"\n";
 		TH1D hist=CopyHistogramToTH1D(&(FitRes[i]->ReferenceHistogram));
-		f_out->WriteTObject(&hist);
-		f_out->WriteTObject(&(FitRes[i]->Fit->Function));
+		f_out->WriteObject(&hist,hist.GetName(),"overwrite");
+		f_out->WriteObject(&(FitRes[i]->Fit->Function),FitRes[i]->Fit->Function.GetName(),"overwrite");
 		if(FitRes[i]->ReferenceHistogram.ParentHistogram)
 		{
 			TH1D hist_ref=CopyHistogramToTH1D((FitRes[i]->ReferenceHistogram.ParentHistogram));
