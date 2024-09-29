@@ -82,7 +82,8 @@ class FitManager:public TObject
 {
 	public:
 	static FitManager& Instance();
-	static FitManager* GetPointer();
+	static FitManager* GetPointer(TFile *file=0);
+	static FitManager* GetPointer(string str);
 
 	TFile *file_for_work=0;
 	TString FileName="";

@@ -634,9 +634,29 @@ FitManager& FitManager::Instance()
 	static FitManager s;
 	return s;
 }
-FitManager* FitManager::GetPointer()
+
+//static FitManager* GetPointer(TFile *file=0);
+//static FitManager* GetPointer(string str);
+
+FitManager* FitManager::GetPointer(TFile *file)
 {
-	return &(Instance());
+	FitManager *m=&(Instance());
+	if(file)
+	{
+		m->ReadFromROOT(file);
+	}
+	return m;
+}
+FitManager* FitManager::GetPointer(string str)
+{
+	TFile f(str.c_str());
+	FitManager *m=&(Instance());
+	if(f.IsOpen())
+	{
+		m->ReadFromROOT(&f);
+	}
+	f.Close();
+	return m;
 }
 
 TFitFunction* FitManager::FindFunction(string ID)
