@@ -59,7 +59,7 @@ class TH1DTracked:public TH1D//класс, сохраняющий операци
 	TH1DTracked(const char *name,const char *title,Int_t nbinsx,const Float_t  *xbins):TH1D(name,title,nbinsx,xbins) { }
 	TH1DTracked(const char *name,const char *title,Int_t nbinsx,const Double_t *xbins):TH1D(name,title,nbinsx,xbins) { }
 	
-	TH1 *ParentHistogram;//!
+	TH1 *ParentHistogram=0;//!
 	TString ParentName;
 	vector<string> Operations;
 	virtual TH1 * 	Rebin (Int_t ngroup=2, const char *newname="", const Double_t *xbins=nullptr);// *MENU*

@@ -41,6 +41,10 @@ TH1DTracked CopyHistogramToTH1DTracked(TH1 *RefHistogram,double Min, double Max,
 
 TH1DTracked* CopyHistogramToTH1DTracked_p(TH1 *RefHistogram,double Min, double Max,TString Name,TString Title)
 {
+	if(!RefHistogram)
+	{
+		return 0;
+	}
 	double XMin=RefHistogram->GetXaxis()->GetXmin(), XMax=RefHistogram->GetXaxis()->GetXmax();
 	//диапазон гистограммы-2 диапазона фита
 	if(Min<XMin)
@@ -543,6 +547,11 @@ void FitManager::ReadFromROOT(TFile *f)
 		for(unsigned int i=0;i<FitRes.size();i++)
 		{
 			TString ParentName=FitRes[i]->ReferenceHistogram.ParentName;
+			if(ParentName=="")
+			{
+				FitRes[i]->ReferenceHistogram.ParentHistogram=0;
+				continue;
+			}
 			TH1* ParHist=(TH1*)f->Get(ParentName);
 			if(ParHist)
 			{
@@ -1281,6 +1290,15 @@ void TFitFunction::FromString(string input)
 		sstr>>id>>func_str>>LeftBorder>>RightBorder;
 		Function=TF1(TString::Format("fit_%s",id.c_str()),func_str.c_str(),LeftBorder,RightBorder);
 		parameters.resize(0);
+		parameters.resize(Function.GetNpar());
+	}
+	if(strings.size()==1)
+	{
+		for(unsigned int i=0; i<parameters.size();i++)
+		{
+			parameters[i].fFunction=this;
+			parameters[i].ParNumber=i;
+		}
 	}
 	for(unsigned int i=1; i<strings.size();i++)
 	{

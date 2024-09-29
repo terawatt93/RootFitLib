@@ -210,7 +210,12 @@ void FitButtonFrame::FFit()
 		return;
 	}
 	//cout<<"integral:"<<fMainFrame->fFitFcn->fFitResult->ReferenceHistogram.Integral();
-	fMainFrame->fFitFcn->Fit(&(fMainFrame->fFitFcn->fFitResult->ReferenceHistogram),true,fMainFrame->fFitFcn->fFitResult->ReferenceHistogram.ParentHistogram);
+	TH1* h=fMainFrame->fFitFcn->fFitResult->ReferenceHistogram.ParentHistogram;
+	if(fMainFrame->fFitFcn->fFitResult->ReferenceHistogram.ParentName=="")
+	{
+		h=0;
+	}
+	fMainFrame->fFitFcn->Fit(&(fMainFrame->fFitFcn->fFitResult->ReferenceHistogram),true,h);
 	fMainFrame->fFitFcn->fFitResult->ReferenceHistogram.Draw("e hist");
 	fMainFrame->fFitFcn->Function.Draw("same");
 	gPad->Update();
@@ -295,6 +300,7 @@ FitParFrame::FitParFrame(TGFrame *fFrame,TString ParName_) : TGHorizontalFrame(f
 void FitParFrame::ClkParSet()
 {
 	//cout<<"double clicked val\n";
+	FitStage=0;
 	Main->ActiveWidget=this;
 	//cout<<Main->fFitFcn->id;
 	//cout<<" val\n";
@@ -424,7 +430,6 @@ void FitParFrame::ProcessCanvasFunction(int event,int x,int y, TObject *selected
 				MaxLimit->SetNumber(c->AbsPixeltoX(x));
 				PointerToParameter->MaxLimit=c->AbsPixeltoX(x);
 				FitStage=0;
-				Main->ActiveWidget=0;
 				Main->fFitFcn->SetParameters();
 				
 				if(LeftBorder)
@@ -448,10 +453,9 @@ void FitParFrame::ProcessCanvasFunction(int event,int x,int y, TObject *selected
 				
 				c->Modified();
 				c->Update();
-				
+				FitStage=-1;
+				//Main->ActiveWidget=0;
 				//для избежания segfault при переходе к другим параметрам
-
-				
 				return;
 			}
 			//if(Event)
@@ -525,7 +529,7 @@ void FitParFrame::ProcessCanvasFunction(int event,int x,int y, TObject *selected
 				MaxLimit->SetNumber(GetYCoordinate(y));
 				PointerToParameter->MaxLimit=GetYCoordinate(y);
 				FitStage=0;
-				Main->ActiveWidget=0;
+				
 				Main->fFitFcn->SetParameters();
 				
 				if(LeftBorder)
@@ -549,9 +553,8 @@ void FitParFrame::ProcessCanvasFunction(int event,int x,int y, TObject *selected
 				
 				c->Modified();
 				c->Update();
-				
-
-				
+				FitStage=-1;
+				//Main->ActiveWidget=0;
 				return;
 			}
 			//if(Event)
