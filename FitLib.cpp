@@ -1301,6 +1301,19 @@ TF1Parameter* TFitFunction::FindParameter(TString Name)
 	return 0;
 }
 
+int TFitFunction::GetNumberOfPeaks()
+{
+	int NumberOfPeaks=0;
+	for(unsigned int i=0;i<parameters.size();i++)
+	{
+		if(parameters[i].ParName.Index("Pos")!=string::npos)
+		{
+			NumberOfPeaks++;
+		}
+	}
+	return NumberOfPeaks;
+}
+
 void TFitFunction::FromString(string input)
 {
 	vector<string> strings=SplitStr(input,";");

@@ -203,6 +203,7 @@ class TFitFunction:public TObject
 	void Fit(TH1 *h, bool KeepResults=true,TH1* Parent=0);
 	void AssignPointers();
 	void GenerateTLegendWithResults(TLegend* p);
+	int GetNumberOfPeaks();
 	int GetNpar();
 	FitManager *fManager=0;//!
 	FitResult *fFitResult=0;//!
