@@ -277,6 +277,10 @@ void FitManager::SaveToROOT(TFile *f_out)
 	{
 		f_out=file_for_work;
 	}
+	else
+	{
+		file_for_work=f_out;
+	}
 	if(!file_for_work)
 	{
 		cout<<"This is FitManager::SaveToROOT(TFile *f_out): both pointers (f_out) и file_for_work are invalid! Returned\n";
