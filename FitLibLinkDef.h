@@ -8,4 +8,5 @@
 #pragma link C++ class FitButtonFrame+;
 #pragma link C++ class FitParFrame+;
 #pragma link C++ class FunctionStringFrame+;
+#pragma link C++ class ResponseFunction+;
 #endif

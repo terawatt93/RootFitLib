@@ -1293,6 +1293,96 @@ void TFitFunction::GenerateTLegendWithResults(TLegend* p)
 	}
 }
 
+void ResponseFunction::ReadResponse(string DetType)
+{
+	TFile f("ResponseDB.root");
+	if(DetType=="NaI")
+	{
+		ResponseHist=(*(TH2F*)f.Get("NaI_Response"));
+		WasRead=true;
+	}
+	if(DetType=="BGO")
+	{
+		ResponseHist=(*(TH2F*)f.Get("BGO_Response"));
+		WasRead=true;
+	}
+	if(DetType=="LaBr")
+	{
+		ResponseHist=(*(TH2F*)f.Get("LaBr_Response"));
+		WasRead=true;
+	}
+	f.Close();
+}
+
+TH1D ResponseFunction::BlurHistogram(TH1D *h, double Coef)
+{
+	TH1D result=*h;
+	result.Reset();
+	for(int i=0;i<h->GetNbinsX();i++)
+	{
+		double E=h->GetBinCenter(i+1);
+		double Sigma=Coef*sqrt(E);
+		double BinContent=h->GetBinContent(i+1);
+		int MinBin=h->FindBin(E-5*Sigma);
+		int MaxBin=h->FindBin(E+5*Sigma);
+		if(MinBin<1)
+		{
+			MinBin=1;
+		}
+		if(MaxBin==h->GetNbinsX()+1)
+		{
+			MaxBin=h->GetNbinsX();
+		}
+		for(int j=MinBin;j<MaxBin;j++)
+		{
+			double X=h->GetXaxis()->GetBinCenter(j+1);
+			double BlurValue=BinContent*exp(-0.5*pow((X-E)/Sigma,2))/(Sigma*sqrt(2*3.1416));
+			result.SetBinContent(j+1,result.GetBinContent(j+1)+BlurValue);
+		}
+	}
+	return result;
+}
+
+double ResponseFunction::Evaluate(double *x, double *p)
+{
+	//параметр 0 отвечает за сдвижку, параметр 1 - коэфф при сигма, остальные - веса
+	double result=0;
+	vector<TH1D> Histograms;
+	for(unsigned int i=0;i<RespHistograms.size();i++)
+	{
+		Histograms.push_back(BlurHistogram(&RespHistograms[i],p[1]));
+	}
+	for(unsigned int i=0;i<Histograms.size();i++)
+	{
+		result+=p[2+i]*Histograms[i].Interpolate(x[0]-p[0]);
+	}
+	return 0;
+}
+
+void ResponseFunction::GenerateResponseFunction(double Min, double Max, vector<double> Energies_)
+{
+	Energies=Energies_;
+	double BinWidth=ResponseHist.GetYaxis()->GetBinWidth(1);
+	int NBins=(Max-Min)/BinWidth;
+	RespHistograms.resize(0);
+	for(unsigned int i=0;i<Energies.size();i++)
+	{
+		TH1D h(TString::Format("Resp_%d",int(Energies[i]*10)),TString::Format("Resp_%d",int(Energies[i]*10)),NBins,Min,Max);
+		for(int j=0;j<h.GetNbinsX();j++)
+		{
+			double Energy=h.GetBinCenter(j+1);
+			if(Energies[i]-h.GetBinCenter(j+1)+10>0)
+				h.SetBinContent(j+1,ResponseHist.Interpolate(Energies[i],Energies[i]-h.GetBinCenter(j+1)+10));
+		}
+		int PhotopeakBin1=h.GetXaxis()->FindBin(Energies[i]-1);
+		int PhotopeakBin2=h.GetXaxis()->FindBin(Energies[i]+1);
+		double Integral=h.Integral(PhotopeakBin1,PhotopeakBin2);
+		h.Scale(1/Integral);
+		RespHistograms.push_back(h);
+	}
+	RespFunction=TF1("Resp",this,&ResponseFunction::Evaluate,Min,Max,Energies.size()+2,"ResponseFunction","Evaluate");
+}
+
 TF1Parameter* TFitFunction::FindParameter(TString Name)
 {
 	for(unsigned int i=0;i<parameters.size();i++)

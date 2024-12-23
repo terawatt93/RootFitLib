@@ -163,6 +163,22 @@ class TFitFunctionComponent:public TObject
 	ClassDef(TFitFunctionComponent,1)
 };
 
+class ResponseFunction
+{
+	public:
+	bool WasRead=false;
+	vector<TH1D> RespHistograms;
+	vector<double> Energies;
+	TF1 RespFunction;
+	TH2F ResponseHist;
+	void ReadResponse(string DetType);
+	void GenerateResponseFunction(double Min, double Max, vector<double> Energies_);
+	double Evaluate(double *x, double *p);
+	TH1D BlurHistogram(TH1D *h, double Coef);
+	ClassDef(ResponseFunction,1)
+};
+
+
 class TFitFunction:public TObject
 {
 	public:
