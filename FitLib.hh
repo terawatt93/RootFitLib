@@ -163,18 +163,46 @@ class TFitFunctionComponent:public TObject
 	ClassDef(TFitFunctionComponent,1)
 };
 
+class ResponseFunction;
+class RespComponent
+{
+	public:
+	int CompIndex=0;
+	TH2F *fHistogram=0;
+	TH2F *fOthHistogram=0;
+	ResponseFunction* fResp=0;
+	double Evaluate(double *x, double *p);
+};
+
 class ResponseFunction
 {
 	public:
 	bool WasRead=false;
-	vector<TH1D> RespHistograms;
+	bool UseExternal=false;
+	int Npx=0;
+	vector<TH2F> RespHistograms;
+	vector<TH2F> RespOtherHistograms;
 	vector<double> Energies;
 	TF1 RespFunction;
 	TH2F ResponseHist;
+	TH2F ResponseOthHist;
+	TF1 SubstrateFunction;
+	vector<RespComponent> RespComponents;
+	vector<TF1> Components;
+	vector<double> Parameters;
 	void ReadResponse(string DetType);
-	void GenerateResponseFunction(double Min, double Max, vector<double> Energies_);
+	void SetParameter(int par,double PP);
+	void GenerateResponseFunction(double Min, double Max, vector<double> Energies_,double CoefMin=0.01,double CoefMax=0.5, int NSteps=20);
 	double Evaluate(double *x, double *p);
+	double EvaluateComp(double *x, double *p);
 	TH1D BlurHistogram(TH1D *h, double Coef);
+	void SetParameters(double p0, double p1 = TMath::QuietNaN(), double p2 = TMath::QuietNaN(),
+                              double p3 = TMath::QuietNaN(), double p4 = TMath::QuietNaN(), double p5 = TMath::QuietNaN(),
+                              double p6 = TMath::QuietNaN(), double p7 = TMath::QuietNaN(), double p8 = TMath::QuietNaN(),
+                              double p9 = TMath::QuietNaN(), double p10 = TMath::QuietNaN());
+	void Draw(Option_t *option="");
+	void PrintParameters();
+	void SetNpx(int px);
 	ClassDef(ResponseFunction,1)
 };
 

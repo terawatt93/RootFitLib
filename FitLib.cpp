@@ -1293,22 +1293,39 @@ void TFitFunction::GenerateTLegendWithResults(TLegend* p)
 	}
 }
 
+double RespComponent::Evaluate(double *x, double *p)
+{
+	double Val=p[2]*fHistogram->Interpolate(x[0]-p[0],p[1]);
+	if(fResp)
+	{
+		if(fResp->SubstrateFunction.GetNpar()>0)
+		{
+			Val+=fResp->SubstrateFunction.Eval(x[0]);
+		}
+			
+	}
+	return Val;
+}
+
 void ResponseFunction::ReadResponse(string DetType)
 {
-	TFile f("ResponseDB.root");
+	TFile f(TString(getenv("RESPONSE_PATH"))+"ResponseDB.root");
 	if(DetType=="NaI")
 	{
 		ResponseHist=(*(TH2F*)f.Get("NaI_Response"));
+		ResponseOthHist=(*(TH2F*)f.Get("NaI_Other"));
 		WasRead=true;
 	}
 	if(DetType=="BGO")
 	{
 		ResponseHist=(*(TH2F*)f.Get("BGO_Response"));
+		ResponseOthHist=(*(TH2F*)f.Get("BGO_Other"));
 		WasRead=true;
 	}
 	if(DetType=="LaBr")
 	{
 		ResponseHist=(*(TH2F*)f.Get("LaBr_Response"));
+		ResponseOthHist=(*(TH2F*)f.Get("LaBr_Other"));
 		WasRead=true;
 	}
 	f.Close();
@@ -1343,44 +1360,161 @@ TH1D ResponseFunction::BlurHistogram(TH1D *h, double Coef)
 	return result;
 }
 
-double ResponseFunction::Evaluate(double *x, double *p)
+void ResponseFunction::SetParameter(int par,double PP)
 {
-	//параметр 0 отвечает за сдвижку, параметр 1 - коэфф при сигма, остальные - веса
-	double result=0;
-	vector<TH1D> Histograms;
-	for(unsigned int i=0;i<RespHistograms.size();i++)
-	{
-		Histograms.push_back(BlurHistogram(&RespHistograms[i],p[1]));
-	}
-	for(unsigned int i=0;i<Histograms.size();i++)
-	{
-		result+=p[2+i]*Histograms[i].Interpolate(x[0]-p[0]);
-	}
-	return 0;
+	RespFunction.SetParameter(par,PP);
 }
 
-void ResponseFunction::GenerateResponseFunction(double Min, double Max, vector<double> Energies_)
+double ResponseFunction::Evaluate(double *x, double *p)
 {
+	//сначала идут параметры подложки (NPar-1), потом - сдвижка, потом - коэфф. размазки, потом - площадь компоненты
+	double result=0;
+	int NParSubstrate=SubstrateFunction.GetNpar();
+	double Sub=0;
+	if(!UseExternal)
+	{
+		int ParIter=NParSubstrate+1;
+		for(unsigned int i=0;i<RespHistograms.size();i++)
+		{
+			result+=p[1+ParIter]*RespHistograms[i].Interpolate(x[0]-p[NParSubstrate],p[ParIter]);
+			Components[i].SetParameters(p[NParSubstrate],p[ParIter],p[1+ParIter]);
+			ParIter+=2;
+		}
+		if(NParSubstrate>0)
+		{
+			Sub=SubstrateFunction.Eval(x[0]-p[NParSubstrate]);
+		}
+		return result+Sub;
+	}
+	else
+	{
+		int ParIter=NParSubstrate+1;
+		for(unsigned int i=0;i<RespHistograms.size();i++)
+		{
+			result+=p[1+ParIter]*RespHistograms[i].Interpolate(x[0]-p[NParSubstrate],p[ParIter])+p[2+ParIter]*RespOtherHistograms[i].Interpolate(x[0]-p[NParSubstrate],p[ParIter]);
+			Components[i].SetParameters(p[NParSubstrate],p[ParIter],p[1+ParIter]);
+			ParIter+=3;
+		}
+		if(NParSubstrate>0)
+		{
+			Sub=SubstrateFunction.Eval(x[0]-p[NParSubstrate]);
+		}
+		return result+Sub;
+	}
+	
+}
+void ResponseFunction::PrintParameters()
+{
+	for(int i=0;i<RespFunction.GetNpar();i++)
+	{
+		cout<<"par"<<i<<" "<<RespFunction.GetParameter(i)<<"\n";
+	}
+}
+void ResponseFunction::SetNpx(int px)
+{
+	Npx=px;
+}
+
+
+void ResponseFunction::SetParameters(double p0, double p1, double p2,
+                              double p3, double p4, double p5,
+                              double p6, double p7, double p8,
+                              double p9, double p10)
+{
+	vector<double> Par={p0,p1,p2,p3,p4,p5,p6,p7,p8,p9,p10};
+	for(int i=0;i<Par.size();i++)
+	{
+		if(i<SubstrateFunction.GetNpar())
+		{
+			SubstrateFunction.SetParameter(i,Par[i]);
+		}
+		RespFunction.SetParameter(i,Par[i]);
+	}
+}
+void ResponseFunction::GenerateResponseFunction(double Min, double Max, vector<double> Energies_,double CoefMin,double CoefMax, int NSteps)
+{
+	vector<int> Colors={kBlack,kGray,kRed-2,kOrange,kOrange-3,kMagenta,kViolet-6,kBlue,kCyan,kGreen,kGreen+3};
 	Energies=Energies_;
 	double BinWidth=ResponseHist.GetYaxis()->GetBinWidth(1);
 	int NBins=(Max-Min)/BinWidth;
 	RespHistograms.resize(0);
+	RespOtherHistograms.resize(0);
+	RespComponents.resize(0);
 	for(unsigned int i=0;i<Energies.size();i++)
 	{
-		TH1D h(TString::Format("Resp_%d",int(Energies[i]*10)),TString::Format("Resp_%d",int(Energies[i]*10)),NBins,Min,Max);
+		TH1D h(TString::Format("Resp_od_%d",int(Energies[i]*10)),TString::Format("Resp_%d",int(Energies[i]*10)),NBins,Min,Max);
+		TH1D h_other(TString::Format("RespOth_od_%d",int(Energies[i]*10)),TString::Format("RespOth_%d",int(Energies[i]*10)),NBins,Min,Max);
+		TH2F h_2D(TString::Format("Resp_%d",int(Energies[i]*10)),TString::Format("Resp_%d",int(Energies[i]*10)),NBins,Min,Max,NSteps,CoefMin,CoefMax);
+		TH2F h_2D_oth(TString::Format("Resp_%d",int(Energies[i]*10)),TString::Format("Resp_%d",int(Energies[i]*10)),NBins,Min,Max,NSteps,CoefMin,CoefMax);
 		for(int j=0;j<h.GetNbinsX();j++)
 		{
 			double Energy=h.GetBinCenter(j+1);
 			if(Energies[i]-h.GetBinCenter(j+1)+10>0)
+			{
 				h.SetBinContent(j+1,ResponseHist.Interpolate(Energies[i],Energies[i]-h.GetBinCenter(j+1)+10));
+				h_other.SetBinContent(j+1,ResponseOthHist.Interpolate(Energies[i],h.GetBinCenter(j+1)));
+			}
 		}
 		int PhotopeakBin1=h.GetXaxis()->FindBin(Energies[i]-1);
 		int PhotopeakBin2=h.GetXaxis()->FindBin(Energies[i]+1);
 		double Integral=h.Integral(PhotopeakBin1,PhotopeakBin2);
 		h.Scale(1/Integral);
-		RespHistograms.push_back(h);
+		h_other.Scale(1/Integral);
+		for(int j=0;j<NSteps;j++)
+		{
+			double Coef=h_2D.GetYaxis()->GetBinCenter(j+1);
+			TH1D h_blured=BlurHistogram(&h,Coef);
+			TH1D h_blured_oth=BlurHistogram(&h_other,Coef);
+			for(int k=0;k<h_blured.GetNbinsX();k++)
+			{
+				h_2D.SetBinContent(k+1,j+1,h_blured.GetBinContent(k+1));
+				h_2D_oth.SetBinContent(k+1,j+1,h_blured_oth.GetBinContent(k+1));
+			}
+		}
+		RespHistograms.push_back(h_2D);
+		RespOtherHistograms.push_back(h_2D_oth);
 	}
-	RespFunction=TF1("Resp",this,&ResponseFunction::Evaluate,Min,Max,Energies.size()+2,"ResponseFunction","Evaluate");
+	if(!UseExternal)
+	{
+		RespFunction=TF1("Resp",this,&ResponseFunction::Evaluate,Min,Max,2*Energies.size()+1+SubstrateFunction.GetNpar(),"ResponseFunction","Evaluate");
+	}
+	else
+	{
+		RespFunction=TF1("Resp",this,&ResponseFunction::Evaluate,Min,Max,3*Energies.size()+1+SubstrateFunction.GetNpar(),"ResponseFunction","Evaluate");
+	}
+	RespComponents.resize(RespHistograms.size());
+	for(unsigned int i=0;i<RespHistograms.size();i++)
+	{
+		RespComponents[i].fHistogram=&RespHistograms[i];
+		RespComponents[i].fResp=this;
+		RespComponents[i].fOthHistogram=&RespOtherHistograms[i];
+	}
+	for(unsigned int i=0;i<RespHistograms.size();i++)
+	{
+		TF1 RespCompTF1(TString::Format("Component_%d",i),&RespComponents[i],&RespComponent::Evaluate,Min,Max,3,"RespComponent","Evaluate");
+		if(i<Colors.size())
+		{
+			RespCompTF1.SetLineColor(Colors[i]);
+		}
+		Components.push_back(RespCompTF1);
+	}
+}
+void ResponseFunction::Draw(Option_t *option)
+{
+	TString opt(option);
+	if(Npx>0)
+	{
+		RespFunction.SetNpx(Npx);
+	}
+	RespFunction.Draw(opt);
+	for(unsigned int i=0;i<Components.size();i++)
+	{
+		if(Npx>0)
+		{
+			Components[i].SetNpx(Npx);
+		}
+		Components[i].Draw(opt+" same");
+	}
 }
 
 TF1Parameter* TFitFunction::FindParameter(TString Name)
