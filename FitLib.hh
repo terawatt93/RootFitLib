@@ -180,6 +180,7 @@ class ResponseFunction
 	bool WasRead=false;
 	bool UseExternal=false;
 	int Npx=0;
+	TString ParameterLog;
 	vector<TH2F> RespHistograms;
 	vector<TH2F> RespOtherHistograms;
 	vector<double> Energies;
@@ -196,6 +197,8 @@ class ResponseFunction
 	double Evaluate(double *x, double *p);
 	double EvaluateComp(double *x, double *p);
 	TH1D BlurHistogram(TH1D *h, double Coef);
+	vector<double> GetPeakParameters(int N);//функция, возвращающая параметры пика: [сдвижка,ошибка, параметр размытия,ошибка, площадь,ошибка]
+	void SetPeakParameters(int PeakNum,double Mv,double Blur, double Area);
 	void SetParameters(double p0, double p1 = TMath::QuietNaN(), double p2 = TMath::QuietNaN(),
                               double p3 = TMath::QuietNaN(), double p4 = TMath::QuietNaN(), double p5 = TMath::QuietNaN(),
                               double p6 = TMath::QuietNaN(), double p7 = TMath::QuietNaN(), double p8 = TMath::QuietNaN(),

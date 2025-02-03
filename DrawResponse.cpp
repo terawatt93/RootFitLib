@@ -10,7 +10,7 @@ void DrawResponse()
 	resp.ReadResponse("LaBr");
 	resp.UseExternal=true;
 	resp.SubstrateFunction=TF1("sub","pol1",0,10000);
-	resp.GenerateResponseFunction(220,500,Peaks);
+	resp.GenerateResponseFunction(100,500,Peaks);
 	resp.SetNpx(2000);
 	
 	

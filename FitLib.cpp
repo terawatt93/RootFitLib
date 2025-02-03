@@ -1293,8 +1293,23 @@ void TFitFunction::GenerateTLegendWithResults(TLegend* p)
 	}
 }
 
+void CheckInterpolation(TH2F* h, double x, double y)
+{
+	double XMin, XMax, YMin, YMax;
+	XMin=h->GetXaxis()->GetXmin();
+	XMax=h->GetXaxis()->GetXmax();
+	YMin=h->GetYaxis()->GetXmin();
+	YMax=h->GetYaxis()->GetXmax();
+	
+	if((x<XMin)||(x>XMax)||(y<YMin)||(y>YMax))
+	{
+		cout<<"This is "<<h->GetName()<<" x:"<<x<<", y:"<<y<<", Xaxis range = ("<<XMin<<","<<XMax<<"), Yaxis range = ("<<YMin<<","<<YMax<<")\n";
+	}
+}
+
 double RespComponent::Evaluate(double *x, double *p)
 {
+	CheckInterpolation(fHistogram,x[0]-p[0], p[1]);
 	double Val=p[2]*fHistogram->Interpolate(x[0]-p[0],p[1]);
 	if(fResp)
 	{
@@ -1305,6 +1320,80 @@ double RespComponent::Evaluate(double *x, double *p)
 			
 	}
 	return Val;
+}
+
+vector<double> ResponseFunction::GetPeakParameters(int N)//функция, возвращающая параметры пика: [сдвижка,ошибка, площадь,ошибка, параметр размытия,ошибка]
+{
+	vector<double> result(6);
+	int NParSubstrate=SubstrateFunction.GetNpar();
+	int ParIter=NParSubstrate+1;
+	if(!UseExternal)
+	{
+		for(unsigned int i=0;i<RespHistograms.size();i++)
+		{
+			if(i==N)
+			{
+				result[0]=RespFunction.GetParameter(NParSubstrate);//положение;
+				result[1]=RespFunction.GetParError(NParSubstrate);//положение;
+				result[2]=RespFunction.GetParameter(ParIter);//размытие
+				result[3]=RespFunction.GetParError(ParIter);//размытие
+				result[4]=RespFunction.GetParameter(ParIter+1);//площадь
+				result[5]=RespFunction.GetParError(ParIter+1);//площадь
+				return result;
+			}
+			ParIter+=2;
+		}
+	}
+	else
+	{
+		for(unsigned int i=0;i<RespHistograms.size();i++)
+		{
+			if(i==N)
+			{
+				result[0]=RespFunction.GetParameter(NParSubstrate);//положение;
+				result[1]=RespFunction.GetParError(NParSubstrate);//положение;
+				result[2]=RespFunction.GetParameter(ParIter);//размытие
+				result[3]=RespFunction.GetParError(ParIter);//размытие
+				result[4]=RespFunction.GetParameter(ParIter+1);//площадь
+				result[5]=RespFunction.GetParError(ParIter+1);//площадь
+				return result;
+			}
+			ParIter+=3;
+		}
+	}
+	return result;
+}
+
+void ResponseFunction::SetPeakParameters(int PeakNum,double Mv,double Blur, double Area)
+{
+	int NParSubstrate=SubstrateFunction.GetNpar();
+	int ParIter=NParSubstrate+1;
+	if(!UseExternal)
+	{
+		RespFunction.SetParameter(NParSubstrate,Mv);
+		for(unsigned int i=0;i<RespHistograms.size();i++)
+		{
+			if(i==PeakNum)
+			{
+				RespFunction.SetParameter(ParIter,Blur);
+				RespFunction.SetParameter(ParIter+1,Area);
+			}
+			ParIter+=2;
+		}
+	}
+	else
+	{
+		RespFunction.SetParameter(NParSubstrate,Mv);
+		for(unsigned int i=0;i<RespHistograms.size();i++)
+		{
+			if(i==PeakNum)
+			{
+				RespFunction.SetParameter(ParIter,Blur);
+				RespFunction.SetParameter(ParIter+1,Area);
+			}
+			ParIter+=3;
+		}
+	}
 }
 
 void ResponseFunction::ReadResponse(string DetType)
@@ -1370,13 +1459,32 @@ double ResponseFunction::Evaluate(double *x, double *p)
 	//сначала идут параметры подложки (NPar-1), потом - сдвижка, потом - коэфф. размазки, потом - площадь компоненты
 	double result=0;
 	int NParSubstrate=SubstrateFunction.GetNpar();
+	if(NParSubstrate>0)
+	{
+		for(int i=0;i<NParSubstrate;i++)
+		{
+			SubstrateFunction.SetParameter(i,p[i]);
+		}
+	}
 	double Sub=0;
+	bool LogParameters=false;
+	if(ParameterLog.Length()==0)
+	{
+		LogParameters=true;
+	}
 	if(!UseExternal)
 	{
 		int ParIter=NParSubstrate+1;
+		if(LogParameters)
+		ParameterLog+=TString::Format("p[%d] (%s)= %.2f",NParSubstrate,"Calibr",p[NParSubstrate]);
 		for(unsigned int i=0;i<RespHistograms.size();i++)
 		{
+			CheckInterpolation(&RespHistograms[i],x[0]-p[NParSubstrate],p[ParIter]);
 			result+=p[1+ParIter]*RespHistograms[i].Interpolate(x[0]-p[NParSubstrate],p[ParIter]);
+			if(LogParameters)
+			{
+				ParameterLog+=TString::Format("p[%d] (%s)= %.2f\np[%d] (%s)= %.2f\n",ParIter,"Blur",p[ParIter],ParIter+1,"Area",p[ParIter+1]);
+			}
 			Components[i].SetParameters(p[NParSubstrate],p[ParIter],p[1+ParIter]);
 			ParIter+=2;
 		}
@@ -1389,10 +1497,16 @@ double ResponseFunction::Evaluate(double *x, double *p)
 	else
 	{
 		int ParIter=NParSubstrate+1;
+		if(LogParameters)
+		ParameterLog+=TString::Format("p[%d] (%s)= %.2f\n",NParSubstrate,"Calibr",p[NParSubstrate]);
 		for(unsigned int i=0;i<RespHistograms.size();i++)
 		{
+			CheckInterpolation(&RespHistograms[i],x[0]-p[NParSubstrate],p[ParIter]);
+			CheckInterpolation(&RespOtherHistograms[i],x[0]-p[NParSubstrate],p[ParIter]);
 			result+=p[1+ParIter]*RespHistograms[i].Interpolate(x[0]-p[NParSubstrate],p[ParIter])+p[2+ParIter]*RespOtherHistograms[i].Interpolate(x[0]-p[NParSubstrate],p[ParIter]);
 			Components[i].SetParameters(p[NParSubstrate],p[ParIter],p[1+ParIter]);
+			if(LogParameters)
+			ParameterLog+=TString::Format("p[%d] (%s)= %.2f\np[%d] (%s)= %.2f\np[%d] (%s)= %.2f\n",ParIter,"Blur",p[ParIter],ParIter+1,"Area",p[ParIter+1],ParIter+2,"AreaExt",p[ParIter+1]);
 			ParIter+=3;
 		}
 		if(NParSubstrate>0)
@@ -1436,16 +1550,22 @@ void ResponseFunction::GenerateResponseFunction(double Min, double Max, vector<d
 	vector<int> Colors={kBlack,kGray,kRed-2,kOrange,kOrange-3,kMagenta,kViolet-6,kBlue,kCyan,kGreen,kGreen+3};
 	Energies=Energies_;
 	double BinWidth=ResponseHist.GetYaxis()->GetBinWidth(1);
+	double MinHist=Min-20;
+	double MaxHist=Max+20;
+	
+	double CoefMinHist=0.8*CoefMin;
+	double CoefMaxHist=1.2*CoefMax;
+	
 	int NBins=(Max-Min)/BinWidth;
 	RespHistograms.resize(0);
 	RespOtherHistograms.resize(0);
 	RespComponents.resize(0);
 	for(unsigned int i=0;i<Energies.size();i++)
 	{
-		TH1D h(TString::Format("Resp_od_%d",int(Energies[i]*10)),TString::Format("Resp_%d",int(Energies[i]*10)),NBins,Min,Max);
-		TH1D h_other(TString::Format("RespOth_od_%d",int(Energies[i]*10)),TString::Format("RespOth_%d",int(Energies[i]*10)),NBins,Min,Max);
-		TH2F h_2D(TString::Format("Resp_%d",int(Energies[i]*10)),TString::Format("Resp_%d",int(Energies[i]*10)),NBins,Min,Max,NSteps,CoefMin,CoefMax);
-		TH2F h_2D_oth(TString::Format("Resp_%d",int(Energies[i]*10)),TString::Format("Resp_%d",int(Energies[i]*10)),NBins,Min,Max,NSteps,CoefMin,CoefMax);
+		TH1D h(TString::Format("Resp_od_%d",int(Energies[i]*10)),TString::Format("Resp_%d",int(Energies[i]*10)),NBins,MinHist,MaxHist);
+		TH1D h_other(TString::Format("RespOth_od_%d",int(Energies[i]*10)),TString::Format("RespOth_%d",int(Energies[i]*10)),NBins,MinHist,MaxHist);
+		TH2F h_2D(TString::Format("Resp_%d",int(Energies[i]*10)),TString::Format("Resp_%d",int(Energies[i]*10)),NBins,MinHist,MaxHist,NSteps,CoefMinHist,CoefMaxHist);
+		TH2F h_2D_oth(TString::Format("Resp_%d",int(Energies[i]*10)),TString::Format("Resp_%d",int(Energies[i]*10)),NBins,MinHist,MaxHist,NSteps,CoefMinHist,CoefMaxHist);
 		for(int j=0;j<h.GetNbinsX();j++)
 		{
 			double Energy=h.GetBinCenter(j+1);
