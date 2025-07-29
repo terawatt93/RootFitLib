@@ -3,6 +3,6 @@ FitFunction func: gaus(0)+pol1(3) 1300.000000 1350.000000 1
 FitFunction par: 0 limited  free  2473.002111 0.000000 1000000.000000 72.219542 Heigth_0
 FitFunction par: 1 limited  free  1334.715379 1310.000000 1350.000000 0.032025 Pos_0
 FitFunction par: 2 limited  free  1.393538 0.000000 20.000000 0.026097 Sigma_0
-FitFunction par: 3 not_limited  free  299.240826 0.000000 0.000000 66.871089 
-FitFunction par: 4 not_limited  free  -0.219147 0.000000 0.000000 0.050190 
+FitFunction par: 3 not_limited  free  299.240826 0.000000 0.000000 66.871470 
+FitFunction par: 4 not_limited  free  -0.219147 0.000000 0.000000 0.050191 
 

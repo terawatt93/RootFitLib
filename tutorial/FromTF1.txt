@@ -1,0 +1,12 @@
+id_list: FitTF1 
+FitTF1 func: gausn(0)+gausn(3)+pol1(6) 1150.000000 1350.000000 1
+FitTF1 par: 0 limited  free  2796.000000 0.000000 1000000.000000 1175621.792407 A_0
+FitTF1 par: 1 limited  free  1175.000000 1165.000000 1180.000000 19.563510 Pos_0
+FitTF1 par: 2 limited  free  2.000000 0.000000 20.000000 25.751125 Sig_0
+FitTF1 par: 3 limited  free  8638.367528 0.000000 1000000.000000 203.868609 A_1
+FitTF1 par: 4 limited  free  1334.715374 1310.000000 1350.000000 0.033519 Pos_1
+FitTF1 par: 5 limited  free  1.393534 0.000000 20.000000 0.026983 Sig_1
+FitTF1 par: 6 not_limited  free  299.283765 0.000000 0.000000 69.236183 Sub_0
+FitTF1 par: 7 not_limited  free  -0.219179 0.000000 0.000000 0.051965 Sub_1
+FitTF1 flags: WithComponents
+

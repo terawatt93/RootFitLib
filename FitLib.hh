@@ -69,6 +69,7 @@ class TH1DTracked:public TH1D//класс, сохраняющий операци
 	string ToString();
 	void GetInfoFromString(string str);
 	void ApplyOperations();
+	void ApplyOperations(TH1* h);
 	ClassDef(TH1DTracked,1)
 };
 
@@ -93,8 +94,11 @@ class FitManager:public TObject
 	vector<TH1DTracked*> ParentHistograms;
 
 	TFitFunction* BookFunction(string InputStr,bool AddNew=false);
+	TFitFunction* BookFunction(TFitFunction *fit,bool AddNew=false);
+	TFitFunction* BookFunction(TF1 *fit,bool AddNew=false);
 	TFitFunction* BookFunction(TString Name,TString Function,double XMin,double XMax,bool AddNew=false);
 	TFitFunction* FindFunction(string ID);
+	void AttachHistogram(TFitFunction* f,TH1 *h);
 	void SaveFitRes(TFitFunction *f,TH1 *hist);
 	void SaveToTXT(string filename);
 	void ReadFromTXT(string filename);
@@ -214,10 +218,12 @@ class TFitFunction:public TObject
 {
 	public:
 	TF1 Function;
+	TF1 SubstrateFunction;
 	string id;
 	string func_str;
 	double LeftBorder=20,RightBorder=100;
 	vector<TF1Parameter> parameters;
+	vector<TF1> Components;
 	void ReadFromTXTFile(string filename);
 	string AsString(int PageNo=0);
 	void GetParameters();
@@ -225,6 +231,8 @@ class TFitFunction:public TObject
 	void SetParName(int ParNumber,TString Name);
 	TString GetParName(int ParNumber);
 	void SetFunction(TString Name,TString FunctionStr,double XMin,double XMax);
+	void FromTF1(TF1 *fFunction, string _id="");
+	void GenerateComponents();//функция, генерирующая компоненты для красивого рисования и автоматического именования параметров
 	double GetParameter(int number);
 	double GetParameter(TString Name);
 	double GetParError(int number);
@@ -255,6 +263,7 @@ class TFitFunction:public TObject
 	FitManager *fManager=0;//!
 	FitResult *fFitResult=0;//!
 	void LaunchGUI();
+	bool WithComponents=false;
 	ClassDef(TFitFunction,1)
 };
 

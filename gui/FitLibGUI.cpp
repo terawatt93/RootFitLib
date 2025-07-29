@@ -24,6 +24,7 @@ int Color(int Num)
 ULong_t UColor(int Num)
 {
 	vector<string> colors={"red","ForestGreen","DarkTurquoise","magenta","olive","Chocolate","Maroon","Orange","DeepPink"};
+	
 	if(Num>=colors.size())
 	{
 		Num=Num%colors.size();
@@ -183,7 +184,8 @@ void FitButtonFrame::FUpdate()
 	if(func->fFitResult)
 	{
 		func->fFitResult->ReferenceHistogram.Draw("e hist");
-		func->Function.Draw("same");
+		//func->Function.Draw("same");
+		func->Draw("same");
 	}
 	else
 	{
@@ -217,7 +219,13 @@ void FitButtonFrame::FFit()
 	}
 	fMainFrame->fFitFcn->Fit(&(fMainFrame->fFitFcn->fFitResult->ReferenceHistogram),true,h);
 	fMainFrame->fFitFcn->fFitResult->ReferenceHistogram.Draw("e hist");
-	fMainFrame->fFitFcn->Function.Draw("same");
+	fMainFrame->fFitFcn->GetParameters();
+	fMainFrame->fFitFcn->SetParameters();
+	fMainFrame->fFitFcn->Draw("same");
+	for(unsigned int i=0;i<fMainFrame->fFitFcn->parameters.size();i++)
+	{
+		fMainFrame->FitParameters[i]->FromTFitFunction(fMainFrame->fFitFcn,i);
+	}
 	gPad->Update();
 	TFile f("test.root","recreate");
 	f.WriteTObject(&(fMainFrame->fFitFcn->fFitResult->ReferenceHistogram));
@@ -713,6 +721,7 @@ void FunctionStringFrame::UpdateFitFunction()
 	if(Main->fFitFcn)
 	{
 		Main->fFitFcn->SetFunction(TString((Main->fFitFcn->id).c_str()),func_str,LeftLimit->GetNumber(),RightLimit->GetNumber());
+		Main->fFitFcn->GenerateComponents();
 	}
 	if((NewXMin!=XMin)||(NewXMax!=XMax))
 	{
@@ -786,7 +795,7 @@ void RootFitLib_gui::CreateForms()
 	
 	if(!fFitFcn)
 	{
-		cout<<"This is RootFitLib_gui::CreateForms: pointer to FitFunction is invalid! Returned\n";
+		cout<<"This is RootFitLib_gui::CreateForms: pointer to FitFunction is invalid! Returned!\n";
 		return; 
 	}
 	FSFrame=new FunctionStringFrame(fVframe1,this);
@@ -885,7 +894,7 @@ void RootFitLib_gui::AnalyseFitFunctionAndCreatePanels(TFitFunction *func)
 		underline_index=ParName.Last('_');
 		cout<<"i:"<<i<<" index:"<<underline_index<<"\n";
 		int ComponentNumber=-1;
-		if(underline_index>-1)
+		if((underline_index>-1)&&(ParName.Index("Sub")==-1))
 		{
 			TString ts=ParName(underline_index+1,ParName.Length());
 			cout<<ts<<"\n";

@@ -1,9 +1,19 @@
 #include "FitLib.hh"
 #include <TKey.h>
+#include "Parser.cpp"
 #pragma once
 
 using namespace std;
 
+int ColorT(int Num)
+{
+	vector<int> colors={2,3,4,6,7,8,9,12,16,23,28,30,32,36,38,41,45,46};
+	if(Num>=colors.size())
+	{
+		Num=Num%colors.size();
+	}
+	return colors[Num];
+}
 
 TH1DTracked CopyHistogramToTH1DTracked(TH1 *RefHistogram,double Min, double Max,TString Name,TString Title)
 {
@@ -36,6 +46,7 @@ TH1DTracked CopyHistogramToTH1DTracked(TH1 *RefHistogram,double Min, double Max,
 		result.SetBinError(BinIterator,RefHistogram->GetBinError(i));
 		BinIterator++;
 	}
+	result.ParentHistogram=RefHistogram;
 	return result;
 }
 
@@ -75,6 +86,7 @@ TH1DTracked* CopyHistogramToTH1DTracked_p(TH1 *RefHistogram,double Min, double M
 		result->SetBinError(BinIterator,RefHistogram->GetBinError(i));
 		BinIterator++;
 	}
+	result->ParentHistogram=RefHistogram;
 	return result;
 }
 void TH1DTracked::GetInfoFromString(string str)
@@ -126,6 +138,33 @@ void TH1DTracked::ApplyOperations()
 		{
 			if(argument>1)
 			TH1::Scale(argument);
+		}
+	}
+}
+
+void TH1DTracked::ApplyOperations(TH1* h)
+{
+	for(unsigned int i=0;i<Operations.size();i++)
+	{
+		stringstream sstr(Operations[i]);
+		string command;
+		double argument;
+		sstr>>command>>argument;
+		//cout<<"command: "<<command<<" "<<argument<<" "<<i<<"\n";
+		if(command=="Rebin")
+		{
+			if(argument>1)
+			h->Rebin(int(argument));
+		}
+		if(command=="Smooth")
+		{
+			if(argument>1)
+			h->Smooth(int(argument));
+		}
+		if(command=="Scale")
+		{
+			if(argument>1)
+			h->Scale(argument);
 		}
 	}
 }
@@ -200,18 +239,18 @@ TH1D CopyHistogramToTH1D(TH1 *RefHistogram,double Min, double Max)
 
 void FitResult::ExtendHistogram(double xmin, double xmax)
 {
-	cout<<"xmin "<<xmin<<" xmax "<<xmax<<"\n";
+	//cout<<"xmin "<<xmin<<" xmax "<<xmax<<"\n";
 	double BinWidth=ReferenceHistogram.GetBinWidth(1);
 	if(!ReferenceHistogram.ParentHistogram)
 	{
 		cout<<"This is FitResult::ExtendHistogram(Double_t xmin,Double_t xmax): cannot extend histogram because pointer to Parent is invalid!\n";
 		return;
 	}
-	cout<<"1\n";
+	//cout<<"1\n";
 	
 	double XMin=ReferenceHistogram.ParentHistogram->GetXaxis()->GetXmin(), XMax=ReferenceHistogram.ParentHistogram->GetXaxis()->GetXmax();//текущие пределы
 	//int Integr=ReferenceHistogram.Integral();
-	cout<<"2\n";
+	//cout<<"2\n";
 	if(xmin==xmax)
 	{
 		xmin=XMin;
@@ -225,25 +264,25 @@ void FitResult::ExtendHistogram(double xmin, double xmax)
 	{
 		xmax=XMax;
 	}
-	cout<<"3\n";
+	//cout<<"3\n";
 	//double PrevBinWidth=ReferenceHistogram.GetBinWidth(1);
 	
 	vector<string> Operations=ReferenceHistogram.Operations;
-	cout<<"4\n";
+	//cout<<"4\n";
 	TH1* Parent=ReferenceHistogram.ParentHistogram;
-	cout<<"5\n";
+	//cout<<"5\n";
 	ReferenceHistogram=CopyHistogramToTH1DTracked(ReferenceHistogram.ParentHistogram,xmin,xmax,ReferenceHistogram.GetName(),ReferenceHistogram.GetTitle());
-	cout<<"6\n";
+	//cout<<"6\n";
 	ReferenceHistogram.ParentHistogram=Parent;
-	cout<<"7\n";
+	//cout<<"7\n";
 	ReferenceHistogram.Operations=Operations;
-	cout<<"8\n";
+	//cout<<"8\n";
 	ReferenceHistogram.ApplyOperations();
-	cout<<"9\n";
+	//cout<<"9\n";
 	double Rebin=ceil(int(BinWidth/ReferenceHistogram.GetBinWidth(1)*10)/10);
-	cout<<"Rebin:"<<Rebin<<" "<<BinWidth/ReferenceHistogram.GetBinWidth(1)<<"\n";
+	//cout<<"Rebin:"<<Rebin<<" "<<BinWidth/ReferenceHistogram.GetBinWidth(1)<<"\n";
 	ReferenceHistogram.Rebin(Rebin);
-	cout<<"10\n";
+	//cout<<"10\n";
 }
 
 void FitManager::ReadParentData(string ParentData)
@@ -286,7 +325,7 @@ void FitManager::SaveToROOT(TFile *f_out)
 		cout<<"This is FitManager::SaveToROOT(TFile *f_out): both pointers (f_out) и file_for_work are invalid! Returned\n";
 		return;
 	}
-	f_out->ReOpen("recreate");
+	f_out->ReOpen("UPDATE");
 	for(unsigned int i=0;i<FitRes.size();i++)
 	{
 		TH1D hist=CopyHistogramToTH1D(&(FitRes[i]->ReferenceHistogram));
@@ -433,7 +472,7 @@ void FitManager::UpdateInROOT(TFile *f_out)
 	f_out->ReOpen("update");
 	for(unsigned int i=0;i<FitRes.size();i++)
 	{
-		cout<<"FitRes: "<<FitRes[i]->Fit->id<<"\n";
+		//cout<<"FitRes: "<<FitRes[i]->Fit->id<<"\n";
 		TH1D hist=CopyHistogramToTH1D(&(FitRes[i]->ReferenceHistogram));
 		f_out->WriteObject(&hist,hist.GetName(),"overwrite");
 		f_out->WriteObject(&(FitRes[i]->Fit->Function),FitRes[i]->Fit->Function.GetName(),"overwrite");
@@ -475,7 +514,7 @@ void FitManager::ReadFromROOT(TFile *f)
 	file_for_work=f;
 	if(f->Get("FitFunctionsList"))
 	{
-		
+		//cout<<"1:\n";
 		string FitList=*(f->Get<string>("FitFunctionsList"));
 		Clear();
 		stringstream ifs(FitList);
@@ -498,12 +537,17 @@ void FitManager::ReadFromROOT(TFile *f)
 		}
 		for(unsigned int i=0;i<id_list.size();i++)
 		{
-			TFitFunction *f=new TFitFunction();
-			f->id=id_list[i];
-			f->FromStringObject(FitList);
-			if(f->parameters.size()>0)
+			TFitFunction *ff=new TFitFunction();
+			if(id_list[i].size()>0)
 			{
-				Functions.push_back(f);
+				ff->id=id_list[i];
+				ff->FromStringObject(FitList);
+				//cout<<"id_list[i]:"<<id_list[i]<<"\n";
+				ff->FromTF1((TF1*)f->Get(id_list[i].c_str()));
+				if(ff->parameters.size()>0)
+				{
+					Functions.push_back(ff);
+				}
 			}
 		}
 	}
@@ -512,6 +556,7 @@ void FitManager::ReadFromROOT(TFile *f)
 	TKey *key;
 	while ((key = (TKey*)keyList()))
 	{
+		//cout<<"2:\n";
 		if(string(key->GetClassName())=="TF1")
 		{
 			TString id(key->GetName());
@@ -524,6 +569,7 @@ void FitManager::ReadFromROOT(TFile *f)
 				ff->Function=*((TF1*)f->Get(key->GetName()));
 				ff->Function.GetRange(ff->LeftBorder,ff->RightBorder);
 				ff->func_str=ff->Function.GetTitle();
+				
 				ff->GetParameters();
 				Functions.push_back(ff);
 			}
@@ -645,6 +691,7 @@ FitManager& FitManager::Instance()
 FitManager* FitManager::GetPointer(TFile *file)
 {
 	FitManager *m=&(Instance());
+	
 	if(file)
 	{
 		m->ReadFromROOT(file);
@@ -771,6 +818,58 @@ TFitFunction* FitManager::BookFunction(string InputStr,bool AddNew)
 	}
 	return f;
 }
+TFitFunction* FitManager::BookFunction(TFitFunction *f,bool AddNew)
+{
+	f->fManager=this;
+	if(AddNew)
+	{
+		TFitFunction *ff=FindFunction(f->id);
+		string id_str=f->id;
+		int iterator=0;
+		while(ff)
+		{
+			id_str+="_"+to_string(iterator);
+			ff=FindFunction(id_str);
+			iterator++;
+		}
+		f->id=id_str;
+		Functions.push_back(f);
+	}
+	else
+	{
+		TFitFunction *ff=FindFunction(f->id);
+		if(ff)
+		{
+			for(unsigned int i=0;i<Functions.size();i++)
+			{
+				if(Functions[i]==ff)
+				{
+					delete ff;
+					Functions[i]=f;
+				}
+			}
+			
+		}
+		else
+		{
+			Functions.push_back(f);
+		}
+	}
+	return f;
+}
+
+TFitFunction* FitManager::BookFunction(TF1 *fit,bool AddNew)
+{
+	string id_str=fit->GetTitle();
+	TFitFunction *func=new TFitFunction();
+	func->FromTF1(fit);
+	return BookFunction(func,AddNew);
+}
+
+void FitManager::AttachHistogram(TFitFunction* f,TH1 *h)
+{
+	SaveFitRes(f,h);
+}
 
 TFitFunction* FitManager::BookFunction(TString Name,TString Function,double XMin,double XMax,bool AddNew)
 {
@@ -871,6 +970,84 @@ void TFitFunction::FromStringObject(string input)
 {
 	stringstream ifs(input);
 	string line;
+	
+	vector<string> vec_str;
+	while(getline(ifs,line))
+	{
+		stringstream sstr(line);
+		string _id;
+		sstr>>_id;
+		if(id==_id)
+		{
+			vec_str.push_back(line);
+		}
+	}
+	for(unsigned int i=0;i<vec_str.size();i++)
+	{
+		//cout<<"vec_str: "<<vec_str[i]<<"\n";
+		stringstream sstr(vec_str[i]);
+		string key;
+		sstr>>key>>key;
+		if(key=="func:")
+		{
+			sstr>>func_str>>LeftBorder>>RightBorder;
+			Function=TF1(TString::Format("fit_%s",id.c_str()),func_str.c_str(),LeftBorder,RightBorder);
+		}
+		if(key=="par:")
+		{
+			TF1Parameter par;
+			par.fFunction=this;
+			int parNum;
+			string limited,fixed;
+			sstr>>parNum>>limited>>fixed;
+			par.ParNumber=parNum;
+			if(limited=="limited")
+			{
+				par.Limited=true;
+			}
+			else
+			{
+				par.Limited=false;
+			}
+			if(fixed=="fixed")
+			{
+				par.Fixed=true;
+			}
+			else
+			{
+				par.Fixed=false;
+			}
+			string ParN;
+			sstr>>par.Value>>par.MinLimit>>par.MaxLimit>>par.Error>>ParN;
+			//cout<<"ParN "<<ParN<<"\n";
+			par.ParName=TString(ParN.c_str());
+			if(parNum>=(int)parameters.size())
+			{
+				parameters.resize(parNum+1);
+			}
+			parameters[parNum]=par;
+		}
+		if(key=="flags:")
+		{
+			while(sstr)
+			{
+				string tmp;
+				sstr>>tmp;
+				//cout<<"flags: "<<tmp<<"\n";
+				if(tmp=="WithComponents")
+				{
+					WithComponents=true;
+				}
+			}
+		}
+	}
+	SetParameters();
+	if(WithComponents)
+	{
+		GenerateComponents();
+	}
+	/*
+	
 	while(getline(ifs,line))
 	{
 		stringstream sstr(line);
@@ -878,10 +1055,12 @@ void TFitFunction::FromStringObject(string input)
 		sstr>>_id;
 		if((id==_id)&&((line.find("func")!=string::npos)||(line.find("par")!=string::npos)))
 		{
+			
 			while(sstr)
 			{
 				string key;
 				sstr>>key;
+				cout<<"key: "<<key<<"\n";
 				if(key=="func:")
 				{
 					sstr>>func_str>>LeftBorder>>RightBorder;
@@ -911,22 +1090,38 @@ void TFitFunction::FromStringObject(string input)
 					{
 						par.Fixed=false;
 					}
-					sstr>>par.Value>>par.MinLimit>>par.MaxLimit>>par.Error>>par.ParName;
+					string ParN;
+					sstr>>par.Value>>par.MinLimit>>par.MaxLimit>>par.Error>>ParN;
+					cout<<"ParN "<<ParN<<"\n";
+					par.ParName=TString(ParN.c_str());
 					if(parNum>=(int)parameters.size())
 					{
 						parameters.resize(parNum+1);
 					}
 					parameters[parNum]=par;
 				}
+				if(key=="flags:")
+				{
+					while(sstr)
+					{
+						string tmp;
+						sstr>>tmp;
+						cout<<"flags: "<<tmp<<"\n";
+						if(tmp=="WithComponents")
+						{
+							WithComponents=true;
+						}
+					}
+				}
 			}
 			SetParameters();
 		}
-	}
+	}*/
 }
 
 void TFitFunction::SetParameters()
 {
-	cout<<"parameters.size(): "<<parameters.size()<<"\n";
+	//cout<<"parameters.size(): "<<parameters.size()<<"\n";
 	for(unsigned int i=0;i<parameters.size();i++)
 	{
 		Function.SetParameter(parameters[i].ParNumber,parameters[i].Value);
@@ -945,6 +1140,21 @@ void TFitFunction::SetParameters()
 			{
 				Function.ReleaseParameter(parameters[i].ParNumber);
 			}
+		}
+	}
+	if(WithComponents)
+	{
+		for(unsigned int i=0;i<Components.size();i++)
+		{
+			for(int j=0;j<Components[i].GetNpar();j++)
+			{
+				Components[i].SetParameter(j,Function.GetParameter(Components[i].GetParName(j)));
+				
+			}
+		}
+		for(int i=0;i<SubstrateFunction.GetNpar();i++)
+		{
+			SubstrateFunction.SetParameter(i,Function.GetParameter(SubstrateFunction.GetParName(i)));
 		}
 	}
 }
@@ -999,6 +1209,7 @@ void TFitFunction::GetParameters()
 	{
 		parameters[i].Value=Function.GetParameter(i);
 		parameters[i].Error=Function.GetParError(i);
+		parameters[i].ParName=Function.GetParName(i);
 		double MinLimit,MaxLimit;
 		Function.GetParLimits(i,MinLimit,MaxLimit);
 		if(MinLimit!=MaxLimit)
@@ -1022,7 +1233,7 @@ string TFitFunction::AsString(int PageNo)
 {
 
 	string result;
-	cout<<"111111: "<<id.c_str()<<" "<<func_str.c_str()<<"\n";
+	func_str=Function.GetTitle();
 	if(PageNo==0)
 	{
 		result=string(TString::Format("%s func: %s %f %f\n",id.c_str(),func_str.c_str(),LeftBorder,RightBorder).Data());
@@ -1031,12 +1242,17 @@ string TFitFunction::AsString(int PageNo)
 	{
 		result=string(TString::Format("%s func: %s %f %f %d\n",id.c_str(),func_str.c_str(),LeftBorder,RightBorder,PageNo).Data());
 	}
-	cout<<"parameters.size: "<<parameters.size()<<"\n";
 	for(unsigned int i=0;i<parameters.size();i++)
 	{
 		parameters[i].fFunction=this;
 		result+=parameters[i].AsString()+"\n";
 	}
+	//строка с флагами: если флаг записан, то он true, если нет - false
+	result+=id+" flags: ";
+	if(WithComponents)
+	result+="WithComponents";
+	
+	result+="\n";
 	return result;
 }
 
@@ -1175,13 +1391,24 @@ void TFitFunction::SetLineColor(int Color)
 void TFitFunction::Draw(Option_t *option)
 {
 	Function.Draw(option);
+	if(WithComponents)
+	{
+		GetParameters();
+		SetParameters();
+		for(unsigned int i=0;i<Components.size();i++)
+		{
+			Components[i].Draw("same");
+		}
+		SubstrateFunction.Draw("same");
+	}
 }
 
 void TFitFunction::SetFunction(TString Name,TString FunctionStr,double XMin,double XMax)
 {
 	Function=TF1(Name,FunctionStr,XMin,XMax);
 	func_str=string(FunctionStr.Data());
-	LeftBorder=XMin,RightBorder=XMax;
+	LeftBorder=XMin;
+	RightBorder=XMax;
 	parameters.resize(Function.GetNpar());
 	for(unsigned int i=0;i<parameters.size();i++)
 	{
@@ -1249,6 +1476,34 @@ void TFitFunction::ReadFromTXTFile(string filename)
 		}
 	}
 	ifs.close();
+}
+
+void TFitFunction::FromTF1(TF1 *fFunction, string _id)
+{
+	if(_id!="")
+	{
+		id=_id;
+	}
+	LeftBorder=fFunction->GetXmin();
+	RightBorder=fFunction->GetXmax();
+	Function=*fFunction;
+	func_str=Function.GetTitle();
+	if(_id!="")
+	{
+		Function.SetName(id.c_str());
+	}
+	else
+	{
+		id=Function.GetName();
+	}
+	parameters.resize(Function.GetNpar());
+	for(unsigned int i=0;i<parameters.size();i++)
+	{
+		parameters[i].fFunction=this;
+		parameters[i].ParNumber=i;
+		parameters[i].ParName=fFunction->GetParName(i);
+	}
+	GetParameters();
 }
 
 void TFitFunction::GenerateTLegendWithResults(TLegend* p)
@@ -1649,6 +1904,90 @@ TF1Parameter* TFitFunction::FindParameter(TString Name)
 	return 0;
 }
 
+void TFitFunction::GenerateComponents()
+{
+	string FuncStr(Function.GetTitle());
+	string SubstrateString;
+	vector<string> Elements=SplitString(FuncStr,'+');
+	int ParIter=0, PeakIter=0, SubstrateParIter=0;
+	Components.resize(0);
+	//
+	
+	for(unsigned int i=0;i<Elements.size();i++)
+	{
+		Elements[i]=ChangeParNumeration(Elements[i]);
+		TF1 TMPFunc("tmp",Elements[i].c_str(),LeftBorder,RightBorder);
+		int CompNpar=TMPFunc.GetNpar();
+		//cout<<"CompNpar:"<<CompNpar<<"\n";
+		int CompType=-1;//переменная, отвечающая за тип компоненты. 0 - gaus, 1-gausn, 2 - pol, -1-прочее
+		if(Elements[i].find("gaus(")!=string::npos)
+		{
+			CompType=0;
+		}
+		if(Elements[i].find("gausn(")!=string::npos)
+		{
+			CompType=1;
+		}
+		//cout<<"Element:"<<i<<" "<<CompType<<"\n";
+		if((CompType!=0)&&(CompType!=1))
+		{
+			//cout<<"(CompType!=0)&&(CompType!=1): "<<Elements[i]<<" "<<SubstrateParIter<<"\n";
+			for(int i=0;i<CompNpar;i++)
+			{
+				Function.SetParName(ParIter+i,TString::Format("Sub_%d",SubstrateParIter+i));
+			}
+			ParIter+=CompNpar;
+			if(SubstrateString.size()>0)
+			{
+				SubstrateString+="+";
+			}
+			SubstrateString+=ChangeParNumeration(Elements[i],SubstrateParIter);
+			SubstrateParIter+=CompNpar;
+		}
+		if(CompType==0)
+		{
+			Function.SetParName(ParIter,TString::Format("H_%d",PeakIter));
+			Components.push_back(TF1(TString::Format("%s_%d",Function.GetName(),PeakIter),"gaus(0)",LeftBorder,RightBorder));
+			Components[Components.size()-1].SetParName(0,TString::Format("H_%d",PeakIter));
+		}
+		if(CompType==1)
+		{
+			Components.push_back(TF1(TString::Format("%s_%d",Function.GetName(),PeakIter),"gausn(0)",LeftBorder,RightBorder));
+			Function.SetParName(ParIter,TString::Format("A_%d",PeakIter));
+			Components[Components.size()-1].SetParName(0,TString::Format("A_%d",PeakIter));
+		}
+		if((CompType==0)||(CompType==1))
+		{
+			WithComponents=true;
+			Function.SetParName(ParIter+1,TString::Format("Pos_%d",PeakIter));
+			Function.SetParName(ParIter+2,TString::Format("Sig_%d",PeakIter));
+			Components[PeakIter].SetParName(1,TString::Format("Pos_%d",PeakIter));
+			Components[PeakIter].SetParName(2,TString::Format("Sig_%d",PeakIter));
+			Components[PeakIter].SetLineColor(ColorT(PeakIter));
+			ParIter+=3;
+			PeakIter++;
+		}
+	}
+	
+	if(SubstrateString.size()>0)
+	{
+		SubstrateFunction=TF1(TString::Format("%s_sub",Function.GetName()),SubstrateString.c_str(),LeftBorder,RightBorder);
+		SubstrateFunction.SetLineColor(1);
+		SubstrateFunction.SetLineStyle(9);
+		for(int i=0;i<SubstrateFunction.GetNpar();i++)
+		{
+			SubstrateFunction.SetParName(i,TString::Format("Sub_%d",i));
+		}
+	}
+	for(unsigned int i=0;i<parameters.size();i++)
+	{
+		//cout<<"i:"<<i<<" "<<Function.GetParName(i)<<"\n";
+		parameters[i].fFunction=this;
+		parameters[i].ParNumber=i;
+		parameters[i].ParName=Function.GetParName(i);
+	}
+}
+
 int TFitFunction::GetNumberOfPeaks()
 {
 	int NumberOfPeaks=0;
@@ -1684,6 +2023,19 @@ void TFitFunction::FromString(string input)
 	for(unsigned int i=1; i<strings.size();i++)
 	{
 		TString ts(strings[i].c_str());
+		if(strings[i].find("flags")!=string::npos)
+		{
+			ts.ReplaceAll(id.c_str(),"");
+			ts.ReplaceAll("flags:","");
+			vector<string> sp=SplitStr(ts.Data()," ");
+			for(unsigned int j=0;j<sp.size();i++)
+			{
+				if(sp[j]=="WithComponents")
+				{
+					WithComponents=true;
+				}
+			}
+		}
 		TF1Parameter par;
 		if(ts.Index("limited")>=0)
 		{
@@ -1693,29 +2045,6 @@ void TFitFunction::FromString(string input)
 		{
 			par.Fixed=true;
 		}
-		if(ts.Index("Name:")>=0)
-		{
-			int space_iterator=0;
-			TString Name_str;
-			for(int i=ts.Index("Name:");i<ts.Length();i++)
-			{
-				if(ts[i]==' ')
-				{
-					space_iterator++;
-				}
-				if(space_iterator==1)
-				{
-					Name_str+=ts[i];
-				}
-				else if(space_iterator>1)
-				{
-					break;
-				}
-			}
-			ts.ReplaceAll("Name","");
-			ts.ReplaceAll("Name_str","");
-			par.ParName=Name_str;
-		}
 		ts.ReplaceAll("limited","");
 		ts.ReplaceAll("fixed","");
 		stringstream sstr(ts.Data());
@@ -1724,7 +2053,10 @@ void TFitFunction::FromString(string input)
 		//int parNum;
 		string limited,fixed;
 		sstr>>par.ParNumber;
-		sstr>>par.Value>>par.MinLimit>>par.MaxLimit;
+		string strName;
+		sstr>>par.Value>>par.MinLimit>>par.MaxLimit>>par.Error>>strName;
+		//cout<<"strName:"<<strName<<"\n";
+		par.ParName=TString(strName.c_str());
 		par.fFunction=this;
 		parameters.push_back(par);
 		if((int)parameters.size()>par.ParNumber)
