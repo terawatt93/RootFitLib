@@ -239,6 +239,11 @@ class TFitFunction:public TObject
 	double GetParError(TString Name);
 	void FromString(string input);
 	
+	vector<double> GetPeakRange(double nSigma);//метод, позволяющий оценить диапазон, в котором находятся пики
+	double EvalChi2Substrate(double nSigma, bool DivideToNDF=true);//метод, позволяющий получить качество описания подложки за пределами пиков
+	double EvalChi2Peaks(double nSigma, bool DivideToNDF=true);//метод, позволяющий получить качество описания пиков (внутри nsigma)
+	
+	
 	TF1Parameter* FindParameter(TString Name);
 	
 	void FromStringObject(string input);//копия ReadFromTXTFile, но из строки 

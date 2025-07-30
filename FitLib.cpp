@@ -1142,21 +1142,6 @@ void TFitFunction::SetParameters()
 			}
 		}
 	}
-	if(WithComponents)
-	{
-		for(unsigned int i=0;i<Components.size();i++)
-		{
-			for(int j=0;j<Components[i].GetNpar();j++)
-			{
-				Components[i].SetParameter(j,Function.GetParameter(Components[i].GetParName(j)));
-				
-			}
-		}
-		for(int i=0;i<SubstrateFunction.GetNpar();i++)
-		{
-			SubstrateFunction.SetParameter(i,Function.GetParameter(SubstrateFunction.GetParName(i)));
-		}
-	}
 }
 
 void TFitFunction::SetParameter(int ParNumber,double Value)
@@ -1226,6 +1211,24 @@ void TFitFunction::GetParameters()
 		else
 		{
 			parameters[i].Chi2TakenIntoAccount=false;
+		}
+	}
+	if(WithComponents)
+	{
+		for(unsigned int i=0;i<Components.size();i++)
+		{
+			for(int j=0;j<Components[i].GetNpar();j++)
+			{
+				int Num=Function.GetParNumber(Components[i].GetParName(j));
+				Components[i].SetParameter(j,Function.GetParameter(Num));
+				Components[i].SetParError(j,Function.GetParError(Num));
+			}
+		}
+		for(int i=0;i<SubstrateFunction.GetNpar();i++)
+		{
+			int Num=Function.GetParNumber(SubstrateFunction.GetParName(i));
+			SubstrateFunction.SetParameter(i,Function.GetParameter(Num));
+			SubstrateFunction.SetParError(i,Function.GetParError(Num));
 		}
 	}
 }
@@ -1904,6 +1907,95 @@ TF1Parameter* TFitFunction::FindParameter(TString Name)
 	return 0;
 }
 
+vector<double> TFitFunction::GetPeakRange(double nSigma)
+{
+	vector<double> result;
+	if(!WithComponents)
+	{
+		return result;
+	}
+	GenerateComponents();
+	GetParameters();
+	double Min=1e9,Max=-1e9;
+	for(unsigned int i=0;i<Components.size();i++)
+	{
+		double Pos=Components[i].GetParameter(1);
+		double Sig=Components[i].GetParameter(2);
+		if(Min>Pos-Sig*nSigma)
+		{
+			Min=Pos-Sig*nSigma;
+		}
+		if(Max<Pos+Sig*nSigma)
+		{
+			Max=Pos+Sig*nSigma;
+		}
+	}
+	result={Min,Max};
+	return result;
+}
+
+double TFitFunction::EvalChi2Substrate(double nSigma,bool DivideToNDF)
+{
+	if(!WithComponents)
+	{
+		return -1;
+	}
+	vector<double> PeakRange=GetPeakRange(nSigma);
+	if(PeakRange.size()==0)
+	{
+		return -1;
+	}
+	double result=0;
+	TH1D *h=(TH1D*)(&(fFitResult->ReferenceHistogram));
+	double NDF=0;
+	for(int i=1;i<h->GetNbinsX()+1;i++)
+	{
+		double val=SubstrateFunction.Eval(h->GetBinCenter(i));
+		if((h->GetBinCenter(i)<PeakRange[0] || h->GetBinCenter(i)>PeakRange[1])&&(h->GetBinCenter(i)>LeftBorder)&&(h->GetBinCenter(i)<RightBorder))
+		{
+			NDF++;
+			result+=pow((h->GetBinContent(i)-val)/(h->GetBinError(i)),2);
+		}
+	}
+	NDF=NDF-SubstrateFunction.GetNpar();
+	
+	if(DivideToNDF)
+	result=result/NDF;
+	
+	return result;
+}
+
+double TFitFunction::EvalChi2Peaks(double nSigma, bool DivideToNDF)//метод, позволяющий получить качество описания пиков (внутри nsigma)
+{
+	if(!WithComponents)
+	{
+		return -1;
+	}
+	vector<double> PeakRange=GetPeakRange(nSigma);
+	if(PeakRange.size()==0)
+	{
+		return -1;
+	}
+	double result=0;
+	TH1D *h=(TH1D*)(&(fFitResult->ReferenceHistogram));
+	double NDF=0;
+	for(int i=1;i<h->GetNbinsX()+1;i++)
+	{
+		double val=Function.Eval(h->GetBinCenter(i));
+		if(h->GetBinCenter(i)>PeakRange[0] && h->GetBinCenter(i)<PeakRange[1]&&(h->GetBinCenter(i)>LeftBorder)&&(h->GetBinCenter(i)<RightBorder))
+		{
+			NDF++;
+			result+=pow((h->GetBinContent(i)-val)/(h->GetBinError(i)),2);
+		}
+	}
+	NDF=NDF-Function.GetNpar();
+	
+	if(DivideToNDF)
+	result=result/NDF;
+	
+	return result;
+}
+
 void TFitFunction::GenerateComponents()
 {
 	string FuncStr(Function.GetTitle());
@@ -1963,6 +2055,15 @@ void TFitFunction::GenerateComponents()
 			Function.SetParName(ParIter+2,TString::Format("Sig_%d",PeakIter));
 			Components[PeakIter].SetParName(1,TString::Format("Pos_%d",PeakIter));
 			Components[PeakIter].SetParName(2,TString::Format("Sig_%d",PeakIter));
+			
+			Components[PeakIter].SetParameter(0,Function.GetParameter(ParIter));
+			Components[PeakIter].SetParameter(1,Function.GetParameter(ParIter+1));
+			Components[PeakIter].SetParameter(2,Function.GetParameter(ParIter+2));
+			
+			Components[PeakIter].SetParError(0,Function.GetParError(ParIter));
+			Components[PeakIter].SetParError(1,Function.GetParError(ParIter+1));
+			Components[PeakIter].SetParError(2,Function.GetParError(ParIter+2));
+			
 			Components[PeakIter].SetLineColor(ColorT(PeakIter));
 			ParIter+=3;
 			PeakIter++;
