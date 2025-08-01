@@ -78,6 +78,16 @@ TH1D CopyHistogramToTH1D(TH1 *RefHistogram,double Min=0, double Max=0);
 TH1DTracked CopyHistogramToTH1DTracked(TH1 *RefHistogram,double Min, double Max,TString Name,TString Title);
 TH1DTracked* CopyHistogramToTH1DTracked_p(TH1 *RefHistogram,double Min, double Max,TString Name,TString Title);//возвращает указатель
 
+class FitSelection:public TObject
+{
+	public:
+	vector<TFitFunction*> Functions;
+	void Select(string reg_par_name);
+	FitSelection(string reg="");
+	double Average(string reg_par_name);
+	double StdDev(string reg_par_name);
+	double DiffFromAverage(string reg_par_name, TFitFunction* F);
+};
 
 class FitManager:public TObject
 {
@@ -98,6 +108,7 @@ class FitManager:public TObject
 	TFitFunction* BookFunction(TF1 *fit,bool AddNew=false);
 	TFitFunction* BookFunction(TString Name,TString Function,double XMin,double XMax,bool AddNew=false);
 	TFitFunction* FindFunction(string ID);
+	vector<TFitFunction*> FindFunctions(string regexp);//ищет функции по строке вида Fit_[0-9]_1
 	void AttachHistogram(TFitFunction* f,TH1 *h);
 	void SaveFitRes(TFitFunction *f,TH1 *hist);
 	void SaveToTXT(string filename);
@@ -144,6 +155,7 @@ class TF1Parameter:public TObject
 	int ParNumber=0;
 	bool Fixed=false;
 	bool Limited=false;
+	int AtLimit=0;//0-предел не достигнут, 1 - предел слева, 2 - предел справа, 3 - ошибка параметра больше диапазона аппроксимации
 	TString ParName="";
 	bool Chi2TakenIntoAccount=false;
 	string AsString();
@@ -244,6 +256,7 @@ class TFitFunction:public TObject
 	double EvalChi2Peaks(double nSigma, bool DivideToNDF=true);//метод, позволяющий получить качество описания пиков (внутри nsigma)
 	
 	
+	
 	TF1Parameter* FindParameter(TString Name);
 	
 	void FromStringObject(string input);//копия ReadFromTXTFile, но из строки 
@@ -269,6 +282,9 @@ class TFitFunction:public TObject
 	FitResult *fFitResult=0;//!
 	void LaunchGUI();
 	bool WithComponents=false;
+	
+	string AtLimitStr();
+	
 	ClassDef(TFitFunction,1)
 };
 

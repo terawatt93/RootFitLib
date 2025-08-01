@@ -723,6 +723,89 @@ TFitFunction* FitManager::FindFunction(string ID)
 	}
 	return result;
 }
+
+FitSelection::FitSelection(string reg)
+{
+	FitManager *m=FitManager::GetPointer();
+	Functions=m->FindFunctions(reg);
+}
+
+void FitSelection::Select(string reg_par_name)
+{
+	FitManager *m=FitManager::GetPointer();
+	Functions=m->FindFunctions(reg_par_name);
+}
+
+double FitSelection::Average(string reg_par_name)
+{
+	double result=0;
+	int N=0;
+	for(unsigned int i=0;i<Functions.size();i++)
+	{
+		for(int j=0;j<Functions[i]->Function.GetNpar();j++)
+		{
+			if(SatisfyPrimitiveRegexp(Functions[i]->Function.GetParName(j),reg_par_name))
+			{
+				result+=Functions[i]->Function.GetParameter(j);
+				N++;
+			}
+		}
+	}
+	return result/N;
+}
+
+double FitSelection::StdDev(string reg_par_name)
+{
+	double Av=Average(reg_par_name);
+	double result=0;
+	int N=0;
+	for(unsigned int i=0;i<Functions.size();i++)
+	{
+		for(int j=0;j<Functions[i]->Function.GetNpar();j++)
+		{
+			if(SatisfyPrimitiveRegexp(Functions[i]->Function.GetParName(j),reg_par_name))
+			{
+				result+=pow(Av-Functions[i]->Function.GetParameter(j),2);
+				N++;
+			}
+		}
+	}
+	if(N<2)
+	{
+		return 0;
+	}
+	return sqrt((1.0/(N-1)*result));
+}
+
+double FitSelection::DiffFromAverage(string reg_par_name, TFitFunction* F)
+{
+	double Av=Average(reg_par_name);
+	double result=0;
+	int N=0;
+	for(int j=0;j<F->Function.GetNpar();j++)
+	{
+		if(SatisfyPrimitiveRegexp(F->Function.GetParName(j),reg_par_name))
+		{
+			result+=F->Function.GetParameter(j);
+			N++;
+		}
+	}
+	return Av-(result/N);
+}
+
+vector<TFitFunction*> FitManager::FindFunctions(string regexp)
+{
+	vector<TFitFunction*> result;
+	for(unsigned int i=0;i<Functions.size();i++)
+	{
+		if(SatisfyPrimitiveRegexp(Functions[i]->id,regexp))
+		{
+			result.push_back(Functions[i]);
+		}
+	}
+	return result;
+}
+
 void FitManager::SaveFitRes(TFitFunction *f,TH1 *hist)
 {
 	FitResult *res=0;
@@ -1202,6 +1285,21 @@ void TFitFunction::GetParameters()
 			parameters[i].MinLimit=MinLimit;
 			parameters[i].MaxLimit=MaxLimit;
 			parameters[i].Limited=true;
+			double ToMinLimit=abs(parameters[i].MinLimit-parameters[i].Value), ToMaxLimit=abs(parameters[i].MaxLimit-parameters[i].Value);
+			
+			if(ToMinLimit<(parameters[i].MaxLimit-parameters[i].MinLimit)/100 || ToMinLimit<(abs(parameters[i].Value-parameters[i].Error)))
+			{
+				parameters[i].AtLimit=1;
+			}
+			if(ToMaxLimit<(parameters[i].MaxLimit-parameters[i].MinLimit)/100 || ToMaxLimit<(abs(parameters[i].Value+parameters[i].Error)))
+			{
+				parameters[i].AtLimit=2;
+			}
+			if(ToMinLimit<(abs(parameters[i].Value-parameters[i].Error))&&ToMaxLimit<(abs(parameters[i].Value+parameters[i].Error)))
+			{
+				parameters[i].AtLimit=3;
+			}
+			//if(abs(parameters[i].MinLimit-parameters[i].Value)<(parameters[i].MaxLimit-parameters[i].MinLimit)/100)
 		}
 		if(FitManager::GetPointer()->MultiplyToChi2)
 		{
@@ -1549,6 +1647,19 @@ void TFitFunction::GenerateTLegendWithResults(TLegend* p)
 		}
 		p->AddEntry((TObject*)0,addition,"");
 	}
+}
+
+string TFitFunction::AtLimitStr()
+{
+	string result="";
+	for(unsigned int i=0;i<parameters.size();i++)
+	{
+		if(parameters[i].AtLimit>0)
+		{
+			result+=parameters[i].ParName+":"+to_string(parameters[i].AtLimit)+";";
+		}
+	}
+	return result;
 }
 
 void CheckInterpolation(TH2F* h, double x, double y)
